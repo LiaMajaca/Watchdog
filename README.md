@@ -2,7 +2,7 @@
 
 ***
 
-## 🌟 Hackathon Project: LAID FIBA Engine
+## 🌟 Hackathon Project Prompt: LAID FIBA Engine
 
 **Project Title:** LAID FIBA Engine: Lightweight Adaptive Intelligence Detector for Fraudulent Identity & Behavior Analytics
 
@@ -14,9 +14,9 @@ Develop a functioning Minimum Viable Product (MVP) of the **LAID FIBA Engine**�
 
 The project must solve the **latency, cost, and accountability gaps** of traditional security:
 
-* **Financial Leakage:** Stop the loss of funds caused by **mass identity theft** (ghost beneficiaries) and **insider collusion** (employees bypassing controls).
-* **Operational Blindness:** Solve the failure of legacy **Signature-Based IDS** to detect **behavioral deviation**—the subtle sign of new or internal fraud.
-* **Resource Constraints:** Provide an **affordable, resilient** solution that is viable for implementation in resource-constrained public sector environments.
+*   **Financial Leakage:** Stop the loss of funds caused by **mass identity theft** (ghost beneficiaries) and **insider collusion** (employees bypassing controls).
+*   **Operational Blindness:** Solve the failure of legacy **Signature-Based IDS** to detect **behavioral deviation**—the subtle sign of new or internal fraud.
+*   **Resource Constraints:** Provide an **affordable, resilient** solution that is viable for implementation in resource-constrained public sector environments.
 
 ### 2. Solution Pillars & Required Features (MVP)
 
@@ -33,8 +33,8 @@ The final deliverable must showcase a complete, end-to-end flow using four inter
 
 The final presentation must clearly articulate these strategic points:
 
-* **Unique Value Proposition (UVP):** Instantaneous, affordable, and auditable prevention against identity and insider fraud.
-* **Unfair Advantage:** **XAI** and **Edge-Optimized Code** that competitors cannot easily replicate.
-* **Key Metric to Prove:** **Mean Time To Detect (MTTD)** must be near zero (milliseconds) to show the solution closes the latency gap left by existing **IDS** systems.
+*   **Unique Value Proposition (UVP):** Instantaneous, affordable, and auditable prevention against identity and insider fraud.
+*   **Unfair Advantage:** **XAI** and **Edge-Optimized Code** that competitors cannot easily replicate.
+*   **Key Metric to Prove:** **Mean Time To Detect (MTTD)** must be near zero (milliseconds) to show the solution closes the latency gap left by existing **IDS** systems.
 
-***
+This prompt provides your team with a clear mission, defined technical constraints, and measurable deliverables for a winning hackathon submission.
