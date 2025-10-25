@@ -3,260 +3,414 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LAID FIBA Engine: Hackathon Pitch</title>
+    <title>Khusela Engine Pitch Deck</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            background-color: #f4f7f6;
-            color: #333;
-            /* Ensure smooth scrolling for navigation links */
-            scroll-behavior: smooth; 
+        :root {
+            --primary: #3b82f6; /* Blue 500 */
+            --accent: #f87171;  /* Red 400 */
+            --success: #34d399; /* Emerald 400 */
+            --bg-dark: #111827; /* Gray 900 */
+            --card-dark: #1f2937; /* Gray 800 */
         }
-        .slide {
-            height: 100vh;
-            width: 100vw;
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: #f3f4f6; /* Gray 100 */
+            scroll-behavior: smooth;
+        }
+        .slide-container {
+            min-height: 100vh;
+            padding: 4rem 1rem;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            align-items: center;
-            padding: 50px;
-            box-sizing: border-box;
-            text-align: center;
-            /* scroll-snap-align: start; /* Optional for full-page snap scrolling */
+            border-bottom: 1px solid #374151; /* Gray 700 */
         }
-        .slide-container {
-            height: 100vh;
-            overflow-y: scroll;
-            /* scroll-snap-type: y mandatory; */
+        .text-gradient {
+            background-image: linear-gradient(to right, var(--primary), #6366f1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
-        /* Color Palette for SASSA/SA Focus */
-        .slide:nth-child(even) { background-color: #e9ecef; }
-        .primary-color { color: #004d40; } /* Dark Teal/Green */
-        .accent-color { color: #ffab00; } /* Gold/Orange */
-        
-        /* NAVIGATION BAR STYLES */
-        .navbar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            background-color: #004d40; /* Primary color background */
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-            z-index: 1000;
-            display: flex;
-            justify-content: center;
-            padding: 10px 0;
-        }
-        .navbar a {
-            color: white;
-            text-decoration: none;
-            padding: 8px 15px;
-            margin: 0 5px;
-            border-radius: 5px;
+        .table-custom th {
+            background-color: #374151;
+            padding: 0.75rem;
+            text-align: left;
             font-weight: 600;
-            transition: background-color 0.3s, color 0.3s;
-            font-size: 0.9em;
         }
-        .navbar a:hover {
-            background-color: #006655; /* Slightly lighter green on hover */
-            color: #ffab00; /* Gold text for highlight */
+        .table-custom td {
+            padding: 0.75rem;
+            border-bottom: 1px solid #374151;
         }
-        
-        /* Adjust slide padding to account for fixed header */
-        .slide {
-            padding-top: 80px; /* Add space for the navbar */
+        /* Custom list style */
+        .list-check li {
+            position: relative;
+            padding-left: 1.75rem;
+            margin-bottom: 0.75rem;
         }
-
-
-        /* SLIDE 1: Title */
-        #slide1 h1 { font-size: 4.5em; color: #004d40; margin-bottom: 0.2em; }
-        #slide1 h2 { font-size: 2em; color: #555; }
-        #slide1 .logo-placeholder { font-size: 1.5em; margin-top: 20px; color: #ffab00; }
-
-        /* SLIDE 2: Problem */
-        #slide2 h2 { font-size: 3em; color: #cc0000; margin-bottom: 20px; }
-        #slide2 ul { text-align: left; list-style-type: '💔'; font-size: 1.5em; line-height: 1.8; max-width: 800px; margin: 0 auto; }
-        #slide2 li strong { color: #cc0000; }
-
-        /* SLIDE 3: Solution */
-        #slide3 h2 { font-size: 3em; color: #004d40; }
-        #slide3 .solution-box { display: flex; gap: 40px; margin-top: 30px; }
-        #slide3 .point { background: #d0f0c0; padding: 20px; border-radius: 10px; flex: 1; text-align: left; }
-        #slide3 .point h3 { color: #004d40; margin-top: 0; font-size: 1.5em; }
-        #slide3 .point p { font-size: 1.1em; }
-
-        /* SLIDE 4: Differentiators */
-        #slide4 h2 { font-size: 3em; color: #004d40; }
-        #slide4 table { width: 80%; margin-top: 30px; border-collapse: collapse; font-size: 1.2em; }
-        #slide4 th, #slide4 td { padding: 15px; border: 1px solid #ccc; }
-        #slide4 th { background-color: #ffab00; color: #333; }
-        #slide4 td:nth-child(3) { font-weight: bold; color: #004d40; background-color: #f7fff5; } /* Highlight Your USP */
-
-        /* SLIDE 5: Demo */
-        #slide5 h2 { font-size: 3em; color: #004d40; }
-        #slide5 .demo-box { display: flex; width: 80%; margin-top: 30px; background: #fff; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
-        #slide5 .left-side { flex: 1; padding: 30px; text-align: left; }
-        #slide5 .right-side { flex: 1; padding: 30px; background-color: #f7fff5; border-radius: 0 15px 15px 0; }
-        #slide5 .alert-sample { font-family: monospace; background: #fff3f3; border: 1px solid #cc0000; padding: 10px; margin-top: 15px; }
-
-        /* SLIDE 6: Business Impact */
-        #slide6 h2 { font-size: 3em; color: #004d40; }
-        #slide6 .metrics { display: flex; justify-content: space-around; width: 90%; margin-top: 40px; }
-        #slide6 .metric { background: #004d40; color: white; padding: 30px; border-radius: 15px; width: 30%; }
-        #slide6 .metric h3 { font-size: 2em; margin: 0; }
-        #slide6 .metric p { font-size: 1.2em; margin: 5px 0 0; }
-        
-        /* SLIDE 7: Call to Action */
-        #slide7 h2 { font-size: 3.5em; color: #ffab00; }
-        #slide7 p { font-size: 1.5em; margin-bottom: 20px; }
-        #slide7 .contact-info { font-size: 1.3em; margin-top: 30px; }
-        #slide7 .contact-info strong { color: #004d40; }
-
+        .list-check li::before {
+            content: "•"; /* Tailwind 'lucide-check' alternative */
+            position: absolute;
+            left: 0;
+            color: var(--success);
+            font-weight: bold;
+            font-size: 1.25rem;
+            line-height: 1;
+        }
     </style>
 </head>
 <body>
     
-    <div class="navbar">
-        <a href="#slide1">1. Hook</a>
-        <a href="#slide2">2. Problem</a>
-        <a href="#slide3">3. Solution</a>
-        <a href="#slide4">4. Differentiators</a>
-        <a href="#slide5">5. Demo</a>
-        <a href="#slide6">6. Business</a>
-        <a href="#slide7">7. Next Steps</a>
-    </div>
-
-    <div class="slide-container">
-
-        <section id="slide1" class="slide">
-            <h1 class="primary-color">LAID FIBA Engine</h1>
-            <h1 class="accent-color">Stopping Grant Fraud, Saving Lives.</h1>
-            <h2>Lightweight AI for Proactive Fraud Detection at SASSA</h2>
-            <div class="logo-placeholder">
-                [Your Team Name] | Hackathon 2025
-                <br>
-                #EdgeAI #SASSA
+    <!-- Fixed Navigation Bar -->
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-gray-900/95 backdrop-blur-sm shadow-lg border-b border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <a href="#slide-1" class="text-xl font-bold text-gradient tracking-wider">Khusela</a>
+                <div class="flex space-x-4 md:space-x-6 text-sm md:text-base">
+                    <a href="#slide-1" class="text-gray-300 hover:text-primary transition duration-150">Problem</a>
+                    <a href="#slide-2" class="text-gray-300 hover:text-primary transition duration-150">Solution</a>
+                    <a href="#slide-3" class="text-gray-300 hover:text-primary transition duration-150">Security</a>
+                    <a href="#slide-5" class="text-gray-300 hover:text-primary transition duration-150 hidden sm:inline">Revenue</a>
+                    <a href="#slide-6" class="text-gray-300 hover:text-primary transition duration-150 hidden md:inline">Innovation</a>
+                    <a href="#slide-10" class="text-accent hover:text-red-300 transition duration-150 font-semibold">Pitch End</a>
+                </div>
             </div>
-        </section>
+        </div>
+    </nav>
+    <!-- End Fixed Navigation Bar -->
 
-        <section id="slide2" class="slide">
-            <h2 class="primary-color">South Africa's Grant System is Bleeding Billions.</h2>
-            <ul>
-                <li><strong>R100s of Millions Stolen:</strong> Grants, vital for over 18M vulnerable citizens, are massively exploited.</li>
-                <li><strong>Systemic Identity Fraud:</strong> Criminals create **"Ghost Beneficiaries"** and duplicate accounts using stolen IDs.</li>
-                <li><strong>Insider Collusion:</strong> Corrupt employees **bypass security checks** (like skipping required biometrics) for illegal payments.</li>
-                <li><strong>Current Failure:</strong> Systems are **Reactive**. Fraud is only found via slow audits, **after** the money is lost.</li>
-            </ul>
-        </section>
+    <main class="max-w-7xl mx-auto pt-16">
 
-        <section id="slide3" class="slide">
-            <h2>Introducing the LAID FIBA Engine: Autonomous Fraud Defense.</h2>
-            <p style="font-size: 1.5em; color: #555;">A **Lightweight, Adaptive AI** that hunts fraud in real-time, right at the source.</p>
-            <div class="solution-box">
-                <div class="point">
-                    <h3>1. Edge AI for Speed</h3>
-                    <p>Uses small, efficient ML models running on local hardware. No expensive cloud infrastructure needed. **Instant decisions.**</p>
-                </div>
-                <div class="point">
-                    <h3>2. Behavioral Anomaly Detection</h3>
-                    <p>Learns the "normal" workflow of every teller and application. Instantly flags *any* deviation—stopping unknown (Zero-Day) fraud.</p>
-                </div>
-                <div class="point">
-                    <h3>3. Automated Response (Prevent)</h3>
-                    <p>Triggers immediate actions: automatically **holds suspicious payments** or **locks out colluding employees** the moment fraud is detected.</p>
+        <!-- Slide 1: Problem Statement -->
+        <section class="slide-container" id="slide-1">
+            <div class="max-w-4xl mx-auto">
+                <p class="text-xl font-medium text-accent uppercase mb-3">Slide 1: Problem Statement</p>
+                <h1 class="text-6xl md:text-8xl font-black text-white mb-6 leading-tight">
+                    The <span class="text-gradient">Hidden Cost</span> of Digital Fraud in South Africa
+                </h1>
+                <p class="text-2xl font-light italic mb-8 border-l-4 border-accent pl-4">
+                    “Every day, thousands of social-grant and accident-claim payments are processed. Behind them hides a growing wave of identity duplication, collusion rings, and forged documents”
+                </p>
+                <div class="grid grid-cols-2 gap-4 text-gray-400">
+                    <p>• SASSA and the Road Accident Fund face increasing cyber-enabled fraud.</p>
+                    <p>• Manual detection is slow, reactive, and dangerously dependent on human analysts.</p>
+                    <p>• Existing fraud platforms are built for banks.</p>
+                    <p>• Losses harm the most vulnerable — citizens depending on grants and legitimate claims.</p>
                 </div>
             </div>
         </section>
 
-        <section id="slide4" class="slide">
-            <h2>The Competitive Edge: Built for SA's Reality.</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Feature</th>
-                        <th>Existing SASSA Systems (Reactive)</th>
-                        <th>LAID FIBA Engine (Your USP)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>**Detection Type**</td>
-                        <td>Static Rules / Blacklists (Easily Bypassed)</td>
-                        <td>**Adaptive Behavioral AI** (Learns Evolving Fraud)</td>
-                    </tr>
-                    <tr>
-                        <td>**Response Time**</td>
-                        <td>Delayed (Audit-Based: Hours/Days later)</td>
-                        <td>**INSTANTANEOUS** (Milliseconds at the Edge)</td>
-                    </tr>
-                    <tr>
-                        <td>**Manpower/Skills Gap**</td>
-                        <td>High Alert Fatigue & Manpower Dependent</td>
-                        <td>**Explainable AI (XAI)** Augments Analysts, Low False Positives</td>
-                    </tr>
-                    <tr>
-                        <td>**Cost/Infrastructure**</td>
-                        <td>Requires expensive, large-scale SIEM/Legacy Upgrades</td>
-                        <td>**Lightweight / Runs on Existing Hardware** (Low TCO)</td>
-                    </tr>
-                </tbody>
-            </table>
+        <!-- Slide 2: Solution Overview -->
+        <section class="slide-container" id="slide-2">
+            <div class="max-w-4xl mx-auto">
+                <p class="text-xl font-medium text-success uppercase mb-3">Slide 2: Solution Overview</p>
+                <h2 class="text-5xl md:text-7xl font-black text-gradient mb-4">Our Solution — The Khusela Engine</h2>
+                <p class="text-2xl font-light text-gray-300 mb-8">
+                    Fraud Intelligence and Behaviour Automation Engine
+                </p>
+                <p class="text-xl text-gray-400 mb-6">
+                    "A web-based simulation that demonstrates how automated cyber-fraud detection, prevention, and human oversight can protect South Africa’s most critical social systems.”
+                </p>
+
+                <ul class="list-check pl-4">
+                    <li>A real-time fraud-prevention simulation dashboard built in React + TypeScript.</li>
+                    <li>Simulates a full security lifecycle: Detection → Analysis → Prevention → Learning.</li>
+                    <li>Built-in human oversight dashboard for review and retraining simulation.</li>
+                    <li>Lays the groundwork for a secure backend that can one day process real data.</li>
+                </ul>
+            </div>
         </section>
 
-        <section id="slide5" class="slide">
-            <h2>Demo: Real-Time Insider Threat Detection</h2>
-            <div class="demo-box">
-                <div class="left-side">
-                    <h3>The Scenario: Teller Collusion</h3>
-                    <p>We simulate a corrupt employee logging in and attempting to bypass the mandatory biometric verification check on five high-value grant payments.</p>
-                    <p>The LAID FIBA Engine, running silently in the background, monitors the internal system call data (Teller ID, Action Code, Biometric Flag).</p>
-                    <p style="margin-top: 20px;">**Result:** The system identifies the process deviation from Teller X's "normal" compliance pattern.</p>
+        <!-- Slide 3: Security by Design -->
+        <section class="slide-container" id="slide-3">
+            <div class="max-w-5xl mx-auto">
+                <p class="text-xl font-medium text-accent uppercase mb-3">Slide 3: Security & Trust</p>
+                <h2 class="text-5xl md:text-6xl font-black text-white mb-8">
+                    Security by Design: <span class="text-primary">A Trusted Solution</span>
+                </h2>
+                
+                <p class="text-xl font-light italic mb-6">
+                    “We don’t just detect threats — we design every layer to protect sensitive data and maintain public trust.”
+                </p>
+
+                <h3 class="text-2xl font-bold mb-4 text-primary">Defender vs. Khusela Engine</h3>
+                <div class="overflow-x-auto rounded-xl">
+                    <table class="w-full text-sm text-left table-custom">
+                        <thead>
+                            <tr>
+                                <th>Feature</th>
+                                <th>Microsoft Defender</th>
+                                <th>Khusela Engine</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Target Sector</td>
+                                <td>Enterprise / PC endpoint protection</td>
+                                <td>Public-sector fraud systems (SASSA & RAF)</td>
+                            </tr>
+                            <tr>
+                                <td>Scope</td>
+                                <td>Malware, ransomware, device security</td>
+                                <td>Identity fraud, collusion, forged claim detection</td>
+                            </tr>
+                            <tr>
+                                <td>Transparency</td>
+                                <td>Proprietary algorithms</td>
+                                <td>Explainable logic + HIL retraining loop</td>
+                            </tr>
+                            <tr>
+                                <td>Compliance</td>
+                                <td>Generic Global Compliance</td>
+                                <td>Locally tuned for South African regulations (POPIA)</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
-                <div class="right-side">
-                    <h3>LAID's Automated Response (Log)</h3>
-                    <div class="alert-sample">
-                        **INSIDER THREAT ALERT: High Confidence (98%)**<br>
-                        **EXPLANATION (XAI):** Teller ID 456 approved a payment without the required biometric scan. **This violates policy P-101.**<br>
-                        **ACTION:** Employee account temporarily suspended, internal log audit initiated.
+                <p class="mt-6 text-lg">
+                    USP: We focus on data-level fraud prevention, domain-specific intelligence, and human-augmented trust.
+                </p>
+            </div>
+        </section>
+
+        <!-- Slide 4: Competitive Differentiation -->
+        <section class="slide-container" id="slide-4">
+            <div class="max-w-4xl mx-auto">
+                <p class="text-xl font-medium text-success uppercase mb-3">Slide 4: Competitive Advantage</p>
+                <h2 class="text-5xl md:text-6xl font-black text-white mb-8">
+                    The Market Gap: <span class="text-gradient">Built for Public Welfare</span>
+                </h2>
+
+                <h3 class="text-2xl font-bold mb-4 text-accent">Limitations of Traditional Competitors</h3>
+                <ul class="list-disc list-inside space-y-3 text-lg text-gray-300 mb-8">
+                    <li>Generic Risk Models: Miss fraud vectors specific to grants (e.g., duplicated ID across multiple grant types).</li>
+                    <li>Reactive Post-Mortem: Designed for *reporting* fraud after the fact, not real-time automated prevention.</li>
+                    <li>Black-Box AI: Opaque algorithms that cannot be easily audited or explained to government watchdogs.</li>
+                </ul>
+
+                <h3 class="text-2xl font-bold mb-4 text-primary">Our Unique Selling Proposition</h3>
+                <p class="text-xl text-gray-400">
+                    The Khusela Engine is the only solution that combines real-time automated fraud *prevention* with a Human-in-the-Loop retraining system specifically tuned for South African social grant environments.
+                </p>
+            </div>
+        </section>
+        
+        <!-- Slide 5: Sustainability & Revenue Model -->
+        <section class="slide-container" id="slide-5">
+            <div class="max-w-5xl mx-auto">
+                <p class="text-xl font-medium text-accent uppercase mb-3">Slide 5: Sustainability</p>
+                <h2 class="text-5xl md:text-6xl font-black text-white mb-8">
+                    Revenue Model: <span class="text-success">Self-Sustaining Impact</span>
+                </h2>
+
+                <p class="text-xl font-light italic mb-6">
+                    “Our vision is to build Khusela, a self-sustaining cybersecurity engine that serves both public institutions and small businesses in South Africa.”
+                </p>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-card-dark p-6 rounded-xl shadow-lg border-t-4 border-primary">
+                        <h3 class="text-2xl font-bold mb-2">1. SaaS Subscription</h3>
+                        <p class="text-gray-400">Cloud-based monthly fee for access to analytics and HIL tools.</p>
+                        <p class="text-sm mt-2 text-primary">Target: Government departments, SMMEs.</p>
                     </div>
-                    <p style="margin-top: 15px; font-weight: bold;">Money is saved. The fraudster is stopped instantly.</p>
+                    <div class="bg-card-dark p-6 rounded-xl shadow-lg border-t-4 border-primary">
+                        <h3 class="text-2xl font-bold mb-2">2. Enterprise Licensing</h3>
+                        <p class="text-gray-400">On-premise installation for large institutions needing data sovereignty (SASSA, RAF).</p>
+                        <p class="text-sm mt-2 text-primary">Target: National and Provincial agencies.</p>
+                    </div>
+                    <div class="bg-card-dark p-6 rounded-xl shadow-lg border-t-4 border-primary">
+                        <h3 class="text-2xl font-bold mb-2">3. Training & Licenses</h3>
+                        <p class="text-gray-400">Package the simulation as a cyber-awareness and training tool.</p>
+                        <p class="text-sm mt-2 text-primary">Target: Educational institutions, corporate training.</p>
+                    </div>
+                </div>
+                
+                <p class="mt-8 text-lg font-semibold text-gray-300">
+                    Ethical Stance: Data is never sold. A portion of revenues is reinvested into digital safety training.
+                </p>
+            </div>
+        </section>
+
+        <!-- Slide 6: Innovation (HIL) -->
+        <section class="slide-container" id="slide-6">
+            <div class="max-w-4xl mx-auto">
+                <p class="text-xl font-medium text-success uppercase mb-3">Slide 6: Core Innovation</p>
+                <h2 class="text-5xl md:text-6xl font-black text-gradient mb-8">
+                    Human-in-the-Loop (HIL): <span class="text-white">Self-Improving Security</span>
+                </h2>
+
+                <p class="text-xl font-light italic mb-8">
+                    “Our core innovation in Khusela ensures the system *learns* from new fraud patterns as fast as they emerge.”
+                </p>
+
+                <div class="space-y-6">
+                    <div class="flex items-start space-x-4">
+                        <span class="text-3xl text-success font-black">1.</span>
+                        <div>
+                            <h3 class="text-2xl font-semibold text-white">Analyst Override</h3>
+                            <p class="text-gray-400">When an analyst confirms a case is legitimate despite a high risk score (false positive), this decision is immediately logged.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start space-x-4">
+                        <span class="text-3xl text-success font-black">2.</span>
+                        <div>
+                            <h3 class="text-2xl font-semibold text-white">Feedback Loop Integration</h3>
+                            <p class="text-gray-400">The human decision is fed back into the Khusela intelligence engine, turning human judgment into machine training data.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start space-x-4">
+                        <span class="text-3xl text-success font-black">3.</span>
+                        <div>
+                            <h3 class="text-2xl font-semibold text-white">Model Retraining Simulation</h3>
+                            <p class="text-gray-400">Simulates immediate model adjustment, closing the gap between machine prediction and human reality to stay ahead of evolving fraud.</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
 
-        <section id="slide6" class="slide">
-            <h2>The Business Case: ROI & Market Potential</h2>
-            <div class="metrics">
-                <div class="metric">
-                    <h3>Fraud Prevention</h3>
-                    <p>Stops R100s of millions in fraud *before* the money leaves the system.</p>
-                </div>
-                <div class="metric">
-                    <h3>Operational Savings</h3>
-                    <p>Automates Tier 1 detection, cutting down investigation time by 70%+.</p>
-                </div>
-                <div class="metric">
-                    <h3>Market Scalability</h3>
-                    <p>Model easily adapts to banks, telecom (SIM swap fraud), and other government departments.</p>
+        <!-- Slide 7: Impact & Value Proposition -->
+        <section class="slide-container" id="slide-7">
+            <div class="max-w-5xl mx-auto">
+                <p class="text-xl font-medium text-accent uppercase mb-3">Slide 7: Impact</p>
+                <h2 class="text-5xl md:text-6xl font-black text-white mb-8">
+                    Quantifiable Impact: <span class="text-primary">Securing Lives</span>
+                </h2>
+
+                <p class="text-xl font-light italic mb-8">
+                    “The success of the Khusela Engine is measured by its ability to save taxpayer money and ensure that funds go to those who truly need them.”
+                </p>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div class="bg-card-dark p-6 rounded-xl shadow-lg text-center">
+                        <p class="text-4xl font-bold text-success mb-2">R5M+</p>
+                        <p class="text-lg text-gray-300">Fraud Prevented per week (simulated).</p>
+                    </div>
+                    <div class="bg-card-dark p-6 rounded-xl shadow-lg text-center">
+                        <p class="text-4xl font-bold text-success mb-2">3 Seconds</p>
+                        <p class="text-lg text-gray-300">Time-to-decision for high-risk claims (down from 3 days).</p>
+                    </div>
+                    <div class="bg-card-dark p-6 rounded-xl shadow-lg text-center">
+                        <p class="text-4xl font-bold text-success mb-2">80%</p>
+                        <p class="text-lg text-gray-300">Reduction in manual case reviews for analysts.</p>
+                    </div>
+                    <div class="bg-card-dark p-6 rounded-xl shadow-lg text-center">
+                        <p class="text-4xl font-bold text-success mb-2">100%</p>
+                        <p class="text-lg text-gray-300">Traceability of all automated block/override decisions.</p>
+                    </div>
                 </div>
             </div>
-            <p style="margin-top: 40px; font-size: 1.3em;">**Revenue Model:** Value-based subscription (e.g., % of protected grant value) + Success fees on fraud recovered.</p>
         </section>
 
-        <section id="slide7" class="slide">
-            <h2>Secure South Africa's Vulnerable.</h2>
-            <p>Join us in pioneering the next generation of adaptive, affordable, and accountable fraud defense.</p>
-            <div class="contact-info">
-                **Team:** [List Team Members]
-                <br>
-                **Contact:** <strong>[Your Team Email]</strong>
-                <br>
-                **Code Repository:** [Link to GitHub/Demo Site]
+        <!-- Slide 8: User Experience (UX) -->
+        <section class="slide-container" id="slide-8">
+            <div class="max-w-4xl mx-auto">
+                <p class="text-xl font-medium text-success uppercase mb-3">Slide 8: User Experience</p>
+                <h2 class="text-5xl md:text-6xl font-black text-gradient mb-8">Intuitive Oversight: <span class="text-white">Empowering the Analyst</span></h2>
+
+                <p class="text-xl font-light italic mb-6">
+                    “Our single-screen dashboard is designed for high-stakes, low-friction decision making.”
+                </p>
+
+                <ul class="list-check pl-4 space-y-4 text-lg">
+                    <li>Risk Score Focus: Primary metric is the dynamic Risk Score (0-100) for immediate context.</li>
+                    <li>Visual Forensics: Dashboard visualizes all contributing risk factors (ID duplication, bank changes).</li>
+                    <li>Case Queue: Dedicated, prioritized list of escalated cases for quick triage.</li>
+                    <li>Mobile-Ready Design: Fully responsive, supporting desktop and tablets for field agents.</li>
+                </ul>
             </div>
-            <h3 style="margin-top: 40px; color: #004d40;">Thank You! Questions?</h3>
+        </section>
+        
+        <!-- Slide 9: Roadmap -->
+        <section class="slide-container" id="slide-9">
+            <div class="max-w-5xl mx-auto">
+                <p class="text-xl font-medium text-accent uppercase mb-3">Slide 9: Roadmap</p>
+                <h2 class="text-5xl md:text-6xl font-black text-white mb-8">
+                    Beyond the Hackathon: <span class="text-primary">A Path to Production</span>
+                </h2>
+
+                <div class="overflow-x-auto rounded-xl">
+                    <table class="w-full text-sm text-left table-custom">
+                        <thead>
+                            <tr>
+                                <th>Phase</th>
+                                <th>Duration</th>
+                                <th>Goal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="font-bold">Phase 1: Simulation</td>
+                                <td>Complete</td>
+                                <td>Successful demonstration of core logic, HIL, and UX.</td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold">Phase 2: Data Integration</td>
+                                <td>3 Months</td>
+                                <td>Establish sandbox API access for secure, real-time *metadata* exchange (no PII) with a partner agency.</td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold">Phase 3: Pilot Program</td>
+                                <td>6 Months</td>
+                                <td>Deploy a limited, non-blocking pilot program on a single, high-risk grant type.</td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold">Phase 4: Scaling</td>
+                                <td>12+ Months</td>
+                                <td>General availability for all social grants, RAF claims, and potential deployment to Home Affairs.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </section>
 
-    </div>
+        <!-- Slide 10: Conclusion & Call to Action -->
+        <section class="slide-container" id="slide-10">
+            <div class="max-w-4xl mx-auto text-center">
+                <p class="text-xl font-medium text-success uppercase mb-3">Slide 10: Conclusion</p>
+                <h2 class="text-6xl md:text-8xl font-black text-gradient mb-8">Secure the Social Fabric</h2>
+
+                <p class="text-3xl text-gray-300 mb-8 max-w-2xl mx-auto">
+                    The fraud crisis is an attack on the most vulnerable. We have proven that the technologies and expertise exist *today* to fight back with automation and intelligence.
+                </p>
+
+                <h3 class="text-4xl font-extrabold text-white mb-4">Final Summary:</h3>
+                <div class="flex justify-center space-x-6 text-xl font-semibold">
+                    <span class="text-accent">Problem: Manual, slow systems.</span>
+                    <span class="text-white">|</span>
+                    <span class="text-primary">Solution: Real-time, adaptive HIL.</span>
+                    <span class="text-white">|</span>
+                    <span class="text-success">Impact: Saves money, protects citizens.</span>
+                </div>
+
+                <div class="mt-12">
+                    <p class="text-2xl font-bold text-white mb-4">Call to Action:</p>
+                    <a href="#" class="inline-block px-8 py-4 bg-primary hover:bg-blue-600 text-white text-2xl font-bold rounded-xl transition duration-300 shadow-xl shadow-blue-500/50">
+                        Let's Partner to Secure South Africa’s Future.
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 11: Team & Contact -->
+        <section class="slide-container bg-card-dark" id="slide-11">
+            <div class="max-w-4xl mx-auto text-center">
+                <p class="text-xl font-medium text-gray-400 uppercase mb-3">Slide 11: Team</p>
+                <h2 class="text-5xl md:text-6xl font-black text-white mb-8">The Architects of Khusela</h2>
+                <div class="text-lg text-gray-400 space-y-2">
+                    <p class="text-3xl font-semibold text-primary">Abomzala</p>
+                    <p>| Majaca L | Simatu S</p>
+                    <div class="pt-4">
+            
+                        
+                        <p class="mt-4 text-sm">Thank you.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+    </main>
 </body>
 </html>
