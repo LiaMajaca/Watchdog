@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LAID FIBA Engine: Hackathon Pitch</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background-color: #f4f7f6;
+            color: #333;
+            /* Ensure smooth scrolling for navigation links */
+            scroll-behavior: smooth; 
+        }
+        .slide {
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 50px;
+            box-sizing: border-box;
+            text-align: center;
+            /* scroll-snap-align: start; /* Optional for full-page snap scrolling */
+        }
+        .slide-container {
+            height: 100vh;
+            overflow-y: scroll;
+            /* scroll-snap-type: y mandatory; */
+        }
+        /* Color Palette for SASSA/SA Focus */
+        .slide:nth-child(even) { background-color: #e9ecef; }
+        .primary-color { color: #004d40; } /* Dark Teal/Green */
+        .accent-color { color: #ffab00; } /* Gold/Orange */
+        
+        /* NAVIGATION BAR STYLES */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: #004d40; /* Primary color background */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            padding: 10px 0;
+        }
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 15px;
+            margin: 0 5px;
+            border-radius: 5px;
+            font-weight: 600;
+            transition: background-color 0.3s, color 0.3s;
+            font-size: 0.9em;
+        }
+        .navbar a:hover {
+            background-color: #006655; /* Slightly lighter green on hover */
+            color: #ffab00; /* Gold text for highlight */
+        }
+        
+        /* Adjust slide padding to account for fixed header */
+        .slide {
+            padding-top: 80px; /* Add space for the navbar */
+        }
+
+
+        /* SLIDE 1: Title */
+        #slide1 h1 { font-size: 4.5em; color: #004d40; margin-bottom: 0.2em; }
+        #slide1 h2 { font-size: 2em; color: #555; }
+        #slide1 .logo-placeholder { font-size: 1.5em; margin-top: 20px; color: #ffab00; }
+
+        /* SLIDE 2: Problem */
+        #slide2 h2 { font-size: 3em; color: #cc0000; margin-bottom: 20px; }
+        #slide2 ul { text-align: left; list-style-type: '💔'; font-size: 1.5em; line-height: 1.8; max-width: 800px; margin: 0 auto; }
+        #slide2 li strong { color: #cc0000; }
+
+        /* SLIDE 3: Solution */
+        #slide3 h2 { font-size: 3em; color: #004d40; }
+        #slide3 .solution-box { display: flex; gap: 40px; margin-top: 30px; }
+        #slide3 .point { background: #d0f0c0; padding: 20px; border-radius: 10px; flex: 1; text-align: left; }
+        #slide3 .point h3 { color: #004d40; margin-top: 0; font-size: 1.5em; }
+        #slide3 .point p { font-size: 1.1em; }
+
+        /* SLIDE 4: Differentiators */
+        #slide4 h2 { font-size: 3em; color: #004d40; }
+        #slide4 table { width: 80%; margin-top: 30px; border-collapse: collapse; font-size: 1.2em; }
+        #slide4 th, #slide4 td { padding: 15px; border: 1px solid #ccc; }
+        #slide4 th { background-color: #ffab00; color: #333; }
+        #slide4 td:nth-child(3) { font-weight: bold; color: #004d40; background-color: #f7fff5; } /* Highlight Your USP */
+
+        /* SLIDE 5: Demo */
+        #slide5 h2 { font-size: 3em; color: #004d40; }
+        #slide5 .demo-box { display: flex; width: 80%; margin-top: 30px; background: #fff; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        #slide5 .left-side { flex: 1; padding: 30px; text-align: left; }
+        #slide5 .right-side { flex: 1; padding: 30px; background-color: #f7fff5; border-radius: 0 15px 15px 0; }
+        #slide5 .alert-sample { font-family: monospace; background: #fff3f3; border: 1px solid #cc0000; padding: 10px; margin-top: 15px; }
+
+        /* SLIDE 6: Business Impact */
+        #slide6 h2 { font-size: 3em; color: #004d40; }
+        #slide6 .metrics { display: flex; justify-content: space-around; width: 90%; margin-top: 40px; }
+        #slide6 .metric { background: #004d40; color: white; padding: 30px; border-radius: 15px; width: 30%; }
+        #slide6 .metric h3 { font-size: 2em; margin: 0; }
+        #slide6 .metric p { font-size: 1.2em; margin: 5px 0 0; }
+        
+        /* SLIDE 7: Call to Action */
+        #slide7 h2 { font-size: 3.5em; color: #ffab00; }
+        #slide7 p { font-size: 1.5em; margin-bottom: 20px; }
+        #slide7 .contact-info { font-size: 1.3em; margin-top: 30px; }
+        #slide7 .contact-info strong { color: #004d40; }
+
+    </style>
+</head>
+<body>
+    
+    <div class="navbar">
+        <a href="#slide1">1. Hook</a>
+        <a href="#slide2">2. Problem</a>
+        <a href="#slide3">3. Solution</a>
+        <a href="#slide4">4. Differentiators</a>
+        <a href="#slide5">5. Demo</a>
+        <a href="#slide6">6. Business</a>
+        <a href="#slide7">7. Next Steps</a>
+    </div>
+
+    <div class="slide-container">
+
+        <section id="slide1" class="slide">
+            <h1 class="primary-color">LAID FIBA Engine</h1>
+            <h1 class="accent-color">Stopping Grant Fraud, Saving Lives.</h1>
+            <h2>Lightweight AI for Proactive Fraud Detection at SASSA</h2>
+            <div class="logo-placeholder">
+                [Your Team Name] | Hackathon 2025
+                <br>
+                #EdgeAI #SASSA
+            </div>
+        </section>
+
+        <section id="slide2" class="slide">
+            <h2 class="primary-color">South Africa's Grant System is Bleeding Billions.</h2>
+            <ul>
+                <li><strong>R100s of Millions Stolen:</strong> Grants, vital for over 18M vulnerable citizens, are massively exploited.</li>
+                <li><strong>Systemic Identity Fraud:</strong> Criminals create **"Ghost Beneficiaries"** and duplicate accounts using stolen IDs.</li>
+                <li><strong>Insider Collusion:</strong> Corrupt employees **bypass security checks** (like skipping required biometrics) for illegal payments.</li>
+                <li><strong>Current Failure:</strong> Systems are **Reactive**. Fraud is only found via slow audits, **after** the money is lost.</li>
+            </ul>
+        </section>
+
+        <section id="slide3" class="slide">
+            <h2>Introducing the LAID FIBA Engine: Autonomous Fraud Defense.</h2>
+            <p style="font-size: 1.5em; color: #555;">A **Lightweight, Adaptive AI** that hunts fraud in real-time, right at the source.</p>
+            <div class="solution-box">
+                <div class="point">
+                    <h3>1. Edge AI for Speed</h3>
+                    <p>Uses small, efficient ML models running on local hardware. No expensive cloud infrastructure needed. **Instant decisions.**</p>
+                </div>
+                <div class="point">
+                    <h3>2. Behavioral Anomaly Detection</h3>
+                    <p>Learns the "normal" workflow of every teller and application. Instantly flags *any* deviation—stopping unknown (Zero-Day) fraud.</p>
+                </div>
+                <div class="point">
+                    <h3>3. Automated Response (Prevent)</h3>
+                    <p>Triggers immediate actions: automatically **holds suspicious payments** or **locks out colluding employees** the moment fraud is detected.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="slide4" class="slide">
+            <h2>The Competitive Edge: Built for SA's Reality.</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>Existing SASSA Systems (Reactive)</th>
+                        <th>LAID FIBA Engine (Your USP)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>**Detection Type**</td>
+                        <td>Static Rules / Blacklists (Easily Bypassed)</td>
+                        <td>**Adaptive Behavioral AI** (Learns Evolving Fraud)</td>
+                    </tr>
+                    <tr>
+                        <td>**Response Time**</td>
+                        <td>Delayed (Audit-Based: Hours/Days later)</td>
+                        <td>**INSTANTANEOUS** (Milliseconds at the Edge)</td>
+                    </tr>
+                    <tr>
+                        <td>**Manpower/Skills Gap**</td>
+                        <td>High Alert Fatigue & Manpower Dependent</td>
+                        <td>**Explainable AI (XAI)** Augments Analysts, Low False Positives</td>
+                    </tr>
+                    <tr>
+                        <td>**Cost/Infrastructure**</td>
+                        <td>Requires expensive, large-scale SIEM/Legacy Upgrades</td>
+                        <td>**Lightweight / Runs on Existing Hardware** (Low TCO)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section id="slide5" class="slide">
+            <h2>Demo: Real-Time Insider Threat Detection</h2>
+            <div class="demo-box">
+                <div class="left-side">
+                    <h3>The Scenario: Teller Collusion</h3>
+                    <p>We simulate a corrupt employee logging in and attempting to bypass the mandatory biometric verification check on five high-value grant payments.</p>
+                    <p>The LAID FIBA Engine, running silently in the background, monitors the internal system call data (Teller ID, Action Code, Biometric Flag).</p>
+                    <p style="margin-top: 20px;">**Result:** The system identifies the process deviation from Teller X's "normal" compliance pattern.</p>
+                </div>
+                <div class="right-side">
+                    <h3>LAID's Automated Response (Log)</h3>
+                    <div class="alert-sample">
+                        **INSIDER THREAT ALERT: High Confidence (98%)**<br>
+                        **EXPLANATION (XAI):** Teller ID 456 approved a payment without the required biometric scan. **This violates policy P-101.**<br>
+                        **ACTION:** Employee account temporarily suspended, internal log audit initiated.
+                    </div>
+                    <p style="margin-top: 15px; font-weight: bold;">Money is saved. The fraudster is stopped instantly.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="slide6" class="slide">
+            <h2>The Business Case: ROI & Market Potential</h2>
+            <div class="metrics">
+                <div class="metric">
+                    <h3>Fraud Prevention</h3>
+                    <p>Stops R100s of millions in fraud *before* the money leaves the system.</p>
+                </div>
+                <div class="metric">
+                    <h3>Operational Savings</h3>
+                    <p>Automates Tier 1 detection, cutting down investigation time by 70%+.</p>
+                </div>
+                <div class="metric">
+                    <h3>Market Scalability</h3>
+                    <p>Model easily adapts to banks, telecom (SIM swap fraud), and other government departments.</p>
+                </div>
+            </div>
+            <p style="margin-top: 40px; font-size: 1.3em;">**Revenue Model:** Value-based subscription (e.g., % of protected grant value) + Success fees on fraud recovered.</p>
+        </section>
+
+        <section id="slide7" class="slide">
+            <h2>Secure South Africa's Vulnerable.</h2>
+            <p>Join us in pioneering the next generation of adaptive, affordable, and accountable fraud defense.</p>
+            <div class="contact-info">
+                **Team:** [List Team Members]
+                <br>
+                **Contact:** <strong>[Your Team Email]</strong>
+                <br>
+                **Code Repository:** [Link to GitHub/Demo Site]
+            </div>
+            <h3 style="margin-top: 40px; color: #004d40;">Thank You! Questions?</h3>
+        </section>
+
+    </div>
+</body>
+</html>
