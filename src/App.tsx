@@ -1,17 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Shield, AlertTriangle, TrendingUp, Users, Ban, Lock, XCircle, AlertCircle, Settings, CheckCircle, Zap, Activity, User, FileText, RotateCcw, Brain } from 'lucide-react';
-import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import React, { useState } from 'react';
+import { Shield, AlertTriangle, TrendingUp, Users, Ban, XCircle, AlertCircle, CheckCircle, Activity, Play, RotateCcw, Brain, Database, Zap, Eye } from 'lucide-react';
 
 // Types
-type Domain = 'sassa' | 'raf';
-
-interface Stats {
-  alertsToday: number;
-  riskScore: number;
-  fraudPrevented: number;
-  activeCases: number;
-}
-
 interface RAFStats {
   claimsProcessedToday: number;
   systemRiskScore: number;
@@ -23,1153 +13,732 @@ interface RAFStats {
 interface RAFActions {
   claimsBlocked: number;
   medicalReportsFlagged: number;
-  collisionRingDetected: number;
+  collusionRingsDetected: number;
   casesEscalated: number;
 }
 
 interface PreventionAction {
   id: string;
   timestamp: string;
+  phase: string;
   threatType: string;
   action: string;
-  status: 'BLOCKED' | 'PAYMENT HELD' | 'ACCOUNT LOCKED' | 'ESCALATED';
+  status: 'DETECTED' | 'ANALYZING' | 'BLOCKED' | 'FLAGGED' | 'ESCALATED';
   responseTime: number;
-  icon: string;
   details: string;
-  domain: Domain;
+  claimAmount?: number;
+  technicalDetails?: string;
+  mlModel?: string;
+  riskFactors?: Array<{ factor: string; weight: number; value: string }>;
 }
 
-interface PreventionStats {
-  paymentsBlocked: number;
-  accountsLocked: number;
-  applicationsRejected: number;
-  casesEscalated: number;
-}
-
-interface PreventionRules {
-  autoBlockPayments: boolean;
-  autoLockAccounts: boolean;
-  autoRejectApplications: boolean;
-  autoEscalate: boolean;
-}
-
-interface TransactionDot {
-  id: string;
-  type: 'normal' | 'threat';
-  x: number;
-  y: number;
-  speed: number;
-  stage: 'detection' | 'analysis' | 'prevention' | 'learning';
-  blocked: boolean;
-}
-
-interface PreventionMetrics {
-  preventionRate: number;
-  avgResponseTime: number;
-  threatsStopped: number;
-  totalProcessed: number;
-}
-
-interface HumanReviewCase {
-  id: string;
-  type: 'auto-prevented' | 'needs-investigation' | 'released';
-  threatType: string;
-  timestamp: string;
+interface DemoResults {
+  title: string;
+  fraudPrevented: number;
+  victimsProtected: number;
+  responseTime: string;
   details: string;
-  riskScore: number;
-  action: string;
-  status: 'PREVENTED' | 'PENDING REVIEW' | 'RELEASED';
-  canOverride: boolean;
-  domain: Domain;
+  technicalSummary: string;
 }
 
-interface ModelLearning {
-  retrainCount: number;
-  lastRetrain: string;
-  accuracyImprovement: number;
-}
+// Helper function
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-// Mock data generator
-
-const generatePreventionAction = (domain: Domain = 'sassa'): PreventionAction => {
-  const sassaThreatTypes = [
-    'Identity Duplication Detected',
-    'Collusion Pattern Identified', 
-    'Velocity Attack Detected',
-    'Document Forgery Attempt',
-    'Account Takeover in Progress',
-    'Suspicious Payment Pattern',
-    'Multiple Application Fraud',
-    'Social Engineering Attempt'
-  ];
-  
-  const rafThreatTypes = [
-    'Duplicate Claim Detection',
-    'Collusion Ring Pattern',
-    'Impossible Injury Claims',
-    'Ghost Claimant',
-    'Velocity Attack',
-    'Medical Report Mismatch',
-    'Fake Accident Scene',
-    'Duplicate Doctor Pattern'
-  ];
-  
-  const threatTypes = domain === 'sassa' ? sassaThreatTypes : rafThreatTypes;
-  
-  const sassaActions = [
-    { action: 'Payment Blocked', status: 'BLOCKED' as const, icon: '🛡️' },
-    { action: '3 Accounts Locked', status: 'ACCOUNT LOCKED' as const, icon: '⚠️' },
-    { action: 'IP Banned + Case Escalated', status: 'ESCALATED' as const, icon: '🚨' },
-    { action: 'Application Rejected', status: 'BLOCKED' as const, icon: '🚫' },
-    { action: 'Payment Held for Review', status: 'PAYMENT HELD' as const, icon: '⏸️' }
-  ];
-  
-  const rafActions = [
-    { action: 'Claim Blocked', status: 'BLOCKED' as const, icon: '🛡️' },
-    { action: '3 Claims Locked', status: 'ACCOUNT LOCKED' as const, icon: '⚠️' },
-    { action: 'Doctor License Suspended', status: 'ESCALATED' as const, icon: '🚨' },
-    { action: 'Claim Rejected', status: 'BLOCKED' as const, icon: '🚫' },
-    { action: 'Claim Held for Review', status: 'PAYMENT HELD' as const, icon: '⏸️' }
-  ];
-  
-  const actions = domain === 'sassa' ? sassaActions : rafActions;
-  const selectedAction = actions[Math.floor(Math.random() * actions.length)];
-  
-  return {
-    id: Math.random().toString(36).substr(2, 9),
-    timestamp: new Date().toLocaleTimeString(),
-    threatType: threatTypes[Math.floor(Math.random() * threatTypes.length)],
-    action: selectedAction.action,
-    status: selectedAction.status,
-    responseTime: Math.floor(Math.random() * 200) + 20,
-    icon: selectedAction.icon,
-    details: `Automated response triggered for threat ID ${Math.floor(Math.random() * 10000)}`,
-    domain
-  };
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat('en-ZA', {
+    style: 'currency',
+    currency: 'ZAR',
+    maximumFractionDigits: 0
+  }).format(amount);
 };
-
-const generateMockStats = (): Stats => ({
-  alertsToday: Math.floor(Math.random() * 50) + 10,
-  riskScore: Math.floor(Math.random() * 100),
-  fraudPrevented: Math.floor(Math.random() * 500000) + 100000,
-  activeCases: Math.floor(Math.random() * 20) + 5
-});
-
-const generateRAFStats = (): RAFStats => ({
-  claimsProcessedToday: Math.floor(Math.random() * 200) + 50,
-  systemRiskScore: Math.floor(Math.random() * 30) + 5, // Lower risk for RAF
-  fraudulentClaimsBlocked: Math.floor(Math.random() * 2000000) + 500000, // R 500K - R 2.5M
-  activeCases: Math.floor(Math.random() * 15) + 3,
-  legitimateVictimsProtected: Math.floor(Math.random() * 100) + 20
-});
-
-const generateRafaActions = (): RAFActions => ({
-  claimsBlocked: Math.floor(Math.random() * 30) + 5,
-  medicalReportsFlagged: Math.floor(Math.random() * 25) + 8,
-  collisionRingDetected: Math.floor(Math.random() * 10) + 2,
-  casesEscalated: Math.floor(Math.random() * 8) + 1
-});
-
-const generateScatterData = () => {
-  return Array.from({ length: 20 }, (_, i) => ({
-    x: Math.random() * 100,
-    y: Math.random() * 100,
-    risk: Math.floor(Math.random() * 100)
-  }));
-};
-
-const generateTransactionDot = (): TransactionDot => ({
-  id: Math.random().toString(36).substr(2, 9),
-  type: Math.random() < 0.3 ? 'threat' : 'normal',
-  x: 0,
-  y: Math.random() * 100 + 20,
-  speed: Math.random() * 2 + 1,
-  stage: 'detection',
-  blocked: false
-});
-
-const generatePreventionMetrics = (): PreventionMetrics => ({
-  preventionRate: 95 + Math.random() * 5, // 95-100%
-  avgResponseTime: Math.random() * 50 + 20, // 20-70ms
-  threatsStopped: Math.floor(Math.random() * 50) + 100,
-  totalProcessed: Math.floor(Math.random() * 200) + 500
-});
-
-const generateHumanReviewCase = (type: HumanReviewCase['type'], domain: Domain = 'sassa'): HumanReviewCase => {
-  const sassaThreatTypes = [
-    'Identity Duplication Detected',
-    'Collusion Pattern Identified',
-    'Velocity Attack Detected',
-    'Document Forgery Attempt',
-    'Account Takeover in Progress',
-    'Suspicious Payment Pattern',
-    'Multiple Application Fraud',
-    'Social Engineering Attempt'
-  ];
-  
-  const rafThreatTypes = [
-    'Duplicate Claim Detection',
-    'Collusion Ring Pattern',
-    'Impossible Injury Claims',
-    'Ghost Claimant',
-    'Velocity Attack',
-    'Medical Report Mismatch',
-    'Fake Accident Scene',
-    'Duplicate Doctor Pattern'
-  ];
-  
-  const sassaActions = [
-    'Payment Blocked',
-    '3 Accounts Locked',
-    'Application Rejected',
-    'Payment Held for Review',
-    'IP Banned + Case Escalated'
-  ];
-  
-  const rafActions = [
-    'Claim Blocked',
-    '3 Claims Locked',
-    'Claim Rejected',
-    'Claim Held for Review',
-    'Doctor License Suspended'
-  ];
-  
-  const threatTypes = domain === 'sassa' ? sassaThreatTypes : rafThreatTypes;
-  const actions = domain === 'sassa' ? sassaActions : rafActions;
-  
-  return {
-    id: Math.random().toString(36).substr(2, 9),
-    type,
-    threatType: threatTypes[Math.floor(Math.random() * threatTypes.length)],
-    timestamp: new Date().toLocaleTimeString(),
-    details: `Automated response triggered for threat ID ${Math.floor(Math.random() * 10000)}`,
-    riskScore: Math.floor(Math.random() * 100),
-    action: actions[Math.floor(Math.random() * actions.length)],
-    status: type === 'auto-prevented' ? 'PREVENTED' : type === 'needs-investigation' ? 'PENDING REVIEW' : 'RELEASED',
-    canOverride: type === 'auto-prevented',
-    domain
-  };
-};
-
-const generateModelLearning = (): ModelLearning => ({
-  retrainCount: Math.floor(Math.random() * 5) + 1,
-  lastRetrain: new Date().toLocaleTimeString(),
-  accuracyImprovement: Math.random() * 2 + 0.5 // 0.5-2.5%
-});
 
 const App: React.FC = () => {
-  const [currentDomain, setCurrentDomain] = useState<Domain>('sassa');
-  const [stats, setStats] = useState<Stats>(generateMockStats());
-  const [rafStats, setRafStats] = useState<RAFStats>(generateRAFStats());
-  const [rafActions, setRafActions] = useState<RAFActions>(generateRafaActions());
-  const [scatterData, setScatterData] = useState(generateScatterData());
-  const [isOnline, setIsOnline] = useState(true);
-  const [preventionActions, setPreventionActions] = useState<PreventionAction[]>([]);
-  const [preventionStats, setPreventionStats] = useState<PreventionStats>({
-    paymentsBlocked: 23,
-    accountsLocked: 8,
-    applicationsRejected: 15,
-    casesEscalated: 4
+  const [rafStats, setRafStats] = useState<RAFStats>({
+    claimsProcessedToday: 147,
+    systemRiskScore: 12,
+    fraudulentClaimsBlocked: 0,
+    activeCases: 3,
+    legitimateVictimsProtected: 0
   });
-  const [preventionRules, setPreventionRules] = useState<PreventionRules>({
-    autoBlockPayments: true,
-    autoLockAccounts: true,
-    autoRejectApplications: true,
-    autoEscalate: true
+
+  const [rafActions, setRafActions] = useState<RAFActions>({
+    claimsBlocked: 0,
+    medicalReportsFlagged: 0,
+    collusionRingsDetected: 0,
+    casesEscalated: 0
   });
-  const [showPreventionModal, setShowPreventionModal] = useState(false);
+
+  const [preventionLog, setPreventionLog] = useState<PreventionAction[]>([]);
+  const [demoRunning, setDemoRunning] = useState(false);
+  const [showResultsModal, setShowResultsModal] = useState(false);
+  const [demoResults, setDemoResults] = useState<DemoResults | null>(null);
+  const [demoProgress, setDemoProgress] = useState(0);
+  const [currentPhase, setCurrentPhase] = useState<string>('');
   const [selectedAction, setSelectedAction] = useState<PreventionAction | null>(null);
-  const [transactionDots, setTransactionDots] = useState<TransactionDot[]>([]);
-  const [preventionMetrics, setPreventionMetrics] = useState<PreventionMetrics>(generatePreventionMetrics());
-  const [recentPreventions, setRecentPreventions] = useState<PreventionAction[]>([]);
-  const [activeTab, setActiveTab] = useState<'auto-prevented' | 'needs-investigation' | 'released'>('auto-prevented');
-  const [humanReviewCases, setHumanReviewCases] = useState<HumanReviewCase[]>([]);
-  const [modelLearning, setModelLearning] = useState<ModelLearning>(generateModelLearning());
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'analytics' | 'cases' | 'settings'>('dashboard');
 
-  useEffect(() => {
-    // Initialize with some prevention actions
-    const initialPreventionActions = Array.from({ length: 5 }, () => generatePreventionAction(currentDomain));
-    setPreventionActions(initialPreventionActions);
-    setRecentPreventions(initialPreventionActions.slice(0, 5));
-    
-    // Initialize human review cases
-    const initialAutoPrevented = Array.from({ length: 8 }, () => generateHumanReviewCase('auto-prevented', currentDomain));
-    const initialNeedsInvestigation = Array.from({ length: 3 }, () => generateHumanReviewCase('needs-investigation', currentDomain));
-    const initialReleased = Array.from({ length: 2 }, () => generateHumanReviewCase('released', currentDomain));
-    setHumanReviewCases([...initialAutoPrevented, ...initialNeedsInvestigation, ...initialReleased]);
+  // Main Demo Function with Realistic Data
+  const runRealisticCollusionDemo = async () => {
+    setDemoRunning(true);
+    setDemoProgress(0);
+    setPreventionLog([]);
+    setCurrentPhase('Initializing Detection Engine...');
 
-    // Auto-update every 3 seconds
-    const interval = setInterval(() => {
-      
-      // Simulate automated threat prevention
-      if (Math.random() < 0.7) { // 70% chance of prevention action
-        const newPreventionAction = generatePreventionAction(currentDomain);
-        setPreventionActions(prev => [newPreventionAction, ...prev].slice(0, 15));
-        setRecentPreventions(prev => [newPreventionAction, ...prev].slice(0, 5));
-        
-        // Update prevention stats based on action type
-        setPreventionStats(prev => {
-          const updated = { ...prev };
-          switch (newPreventionAction.status) {
-            case 'BLOCKED':
-              if (newPreventionAction.action.includes('Payment')) {
-                updated.paymentsBlocked += 1;
-              } else {
-                updated.applicationsRejected += 1;
-              }
-              break;
-            case 'ACCOUNT LOCKED':
-              updated.accountsLocked += 1;
-              break;
-            case 'ESCALATED':
-              updated.casesEscalated += 1;
-              break;
-          }
-          return updated;
-        });
+    const realisticActions: PreventionAction[] = [
+      {
+        id: 'RAF-2024-001',
+        timestamp: '2024-01-15 09:23:45',
+        phase: 'DETECTION',
+        threatType: 'Suspicious Collusion Pattern',
+        action: 'Real-time analysis of claim patterns detected potential collusion ring',
+        status: 'DETECTED',
+        responseTime: 47,
+        details: 'Multiple claims from same geographic area with similar injury patterns and overlapping medical providers detected. ML model flagged 3 claims with 94% confidence.',
+        claimAmount: 450000,
+        technicalDetails: 'Used ensemble of Random Forest and Neural Network models trained on 5 years of RAF data. Pattern matching algorithm identified suspicious correlations.',
+        mlModel: 'RAF-Collusion-Detector v2.1',
+        riskFactors: [
+          { factor: 'Geographic clustering', weight: 0.35, value: 'High' },
+          { factor: 'Medical provider overlap', weight: 0.28, value: 'High' },
+          { factor: 'Injury pattern similarity', weight: 0.22, value: 'Medium' },
+          { factor: 'Timing correlation', weight: 0.15, value: 'Medium' }
+        ]
+      },
+      {
+        id: 'RAF-2024-002',
+        timestamp: '2024-01-15 09:24:12',
+        phase: 'ANALYSIS',
+        threatType: 'Medical Report Inconsistency',
+        action: 'Deep analysis of medical documentation revealed fabricated injuries',
+        status: 'ANALYZING',
+        responseTime: 89,
+        details: 'NLP analysis of medical reports showed identical phrasing across multiple claims. Radiology reports contain impossible injury combinations.',
+        claimAmount: 320000,
+        technicalDetails: 'Natural Language Processing model analyzed 15 medical reports. Found 87% text similarity and impossible anatomical correlations.',
+        mlModel: 'RAF-Medical-NLP v1.8'
+      },
+      {
+        id: 'RAF-2024-003',
+        timestamp: '2024-01-15 09:25:33',
+        phase: 'PREVENTION',
+        threatType: 'Collusion Ring Dismantled',
+        action: 'Successfully blocked fraudulent claims and escalated to investigation team',
+        status: 'BLOCKED',
+        responseTime: 156,
+        details: 'System automatically blocked 3 fraudulent claims totaling R1,200,000. Case escalated to RAF Special Investigations Unit.',
+        claimAmount: 1200000,
+        technicalDetails: 'Multi-layered fraud detection prevented payout. Automated escalation triggered investigation protocols.',
+        mlModel: 'RAF-Prevention-Engine v3.0'
       }
+    ];
+
+    // Simulate real-time processing
+    for (let i = 0; i < realisticActions.length; i++) {
+      setCurrentPhase(realisticActions[i].phase);
+      setDemoProgress(((i + 1) / realisticActions.length) * 100);
       
-      // Update prevention metrics
-      setPreventionMetrics(generatePreventionMetrics());
+      // Add action to log
+      setPreventionLog(prev => [...prev, realisticActions[i]]);
       
       // Update stats
-      setStats(generateMockStats());
-      setRafStats(generateRAFStats());
-      setRafActions(generateRafaActions());
-      
-      // Update scatter data
-      setScatterData(generateScatterData());
-      
-      // Simulate occasional offline status
-      if (Math.random() < 0.1) {
-        setIsOnline(false);
-        setTimeout(() => setIsOnline(true), 2000);
-      }
-    }, 3000);
+      setRafStats(prev => ({
+        ...prev,
+        fraudulentClaimsBlocked: prev.fraudulentClaimsBlocked + (realisticActions[i].claimAmount || 0),
+        legitimateVictimsProtected: prev.legitimateVictimsProtected + 1
+      }));
 
-    return () => clearInterval(interval);
-  }, []);
+      setRafActions(prev => ({
+        ...prev,
+        claimsBlocked: prev.claimsBlocked + 1,
+        medicalReportsFlagged: prev.medicalReportsFlagged + 1,
+        collusionRingsDetected: prev.collusionRingsDetected + 1,
+        casesEscalated: prev.casesEscalated + 1
+      }));
 
-  // Transaction dots animation
-  useEffect(() => {
-    const animationInterval = setInterval(() => {
-      // Add new transaction dots
-      if (Math.random() < 0.8) {
-        const newDot = generateTransactionDot();
-        setTransactionDots(prev => [...prev, newDot]);
-      }
+      await sleep(2000);
+    }
 
-      // Update existing dots
-      setTransactionDots(prev => 
-        prev.map(dot => {
-          const newX = dot.x + dot.speed;
-          let newStage = dot.stage;
-          
-          if (newX > 20 && dot.stage === 'detection') newStage = 'analysis';
-          if (newX > 40 && dot.stage === 'analysis') newStage = 'prevention';
-          if (newX > 60 && dot.stage === 'prevention') newStage = 'learning';
-          
-          // Block threats at prevention stage
-          if (dot.type === 'threat' && newStage === 'prevention' && !dot.blocked) {
-            return { ...dot, x: newX, stage: newStage, blocked: true };
-          }
-          
-          return { ...dot, x: newX, stage: newStage };
-        }).filter(dot => dot.x < 100) // Remove dots that have passed through
-      );
-    }, 100);
+    setDemoResults({
+      title: 'Collusion Ring Dismantled',
+      fraudPrevented: 1200000,
+      victimsProtected: 3,
+      responseTime: '156ms',
+      details: 'Successfully identified and blocked a sophisticated collusion ring operating in Gauteng province.',
+      technicalSummary: 'Used advanced ML models to detect geographic clustering, medical provider overlap, and fabricated documentation patterns.'
+    });
 
-    return () => clearInterval(animationInterval);
-  }, []);
+    setDemoRunning(false);
+    setShowResultsModal(true);
+  };
 
-  // Refresh data when domain changes
-  useEffect(() => {
-    // Generate new data for the selected domain
-    const newPreventionActions = Array.from({ length: 5 }, () => generatePreventionAction(currentDomain));
-    setPreventionActions(newPreventionActions);
-    setRecentPreventions(newPreventionActions.slice(0, 5));
-    
-    const newAutoPrevented = Array.from({ length: 8 }, () => generateHumanReviewCase('auto-prevented', currentDomain));
-    const newNeedsInvestigation = Array.from({ length: 3 }, () => generateHumanReviewCase('needs-investigation', currentDomain));
-    const newReleased = Array.from({ length: 2 }, () => generateHumanReviewCase('released', currentDomain));
-    setHumanReviewCases([...newAutoPrevented, ...newNeedsInvestigation, ...newReleased]);
-  }, [currentDomain]); // eslint-disable-line react-hooks/exhaustive-deps
+  const resetDemo = () => {
+    setDemoRunning(false);
+    setDemoProgress(0);
+    setCurrentPhase('');
+    setPreventionLog([]);
+    setShowResultsModal(false);
+    setDemoResults(null);
+    setRafStats({
+      claimsProcessedToday: 147,
+      systemRiskScore: 12,
+      fraudulentClaimsBlocked: 0,
+      activeCases: 3,
+      legitimateVictimsProtected: 0
+    });
+    setRafActions({
+      claimsBlocked: 0,
+      medicalReportsFlagged: 0,
+      collusionRingsDetected: 0,
+      casesEscalated: 0
+    });
+  };
 
-
-  const getStatusColor = (status: PreventionAction['status']) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
+      case 'DETECTED': return 'text-blue-400 bg-blue-900/20';
+      case 'ANALYZING': return 'text-yellow-400 bg-yellow-900/20';
       case 'BLOCKED': return 'text-red-400 bg-red-900/20';
-      case 'PAYMENT HELD': return 'text-yellow-400 bg-yellow-900/20';
-      case 'ACCOUNT LOCKED': return 'text-orange-400 bg-orange-900/20';
+      case 'FLAGGED': return 'text-orange-400 bg-orange-900/20';
       case 'ESCALATED': return 'text-purple-400 bg-purple-900/20';
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-ZA', {
-      style: 'currency',
-      currency: 'ZAR'
-    }).format(amount);
-  };
-
-  const handlePreventionActionClick = (action: PreventionAction) => {
-    setSelectedAction(action);
-    setShowPreventionModal(true);
-  };
-
-  const togglePreventionRule = (rule: keyof PreventionRules) => {
-    setPreventionRules(prev => ({
-      ...prev,
-      [rule]: !prev[rule]
-    }));
-  };
-
-  const handleOverride = (caseId: string) => {
-    setHumanReviewCases(prev => 
-      prev.map(case_ => 
-        case_.id === caseId 
-          ? { ...case_, type: 'released' as const, status: 'RELEASED' as const }
-          : case_
-      )
-    );
-    // Update model learning
-    setModelLearning(prev => ({
-      ...prev,
-      retrainCount: prev.retrainCount + 1,
-      lastRetrain: new Date().toLocaleTimeString()
-    }));
-  };
-
-  const handleApprovePrevention = (caseId: string) => {
-    setHumanReviewCases(prev => 
-      prev.map(case_ => 
-        case_.id === caseId 
-          ? { ...case_, type: 'auto-prevented' as const, status: 'PREVENTED' as const }
-          : case_
-      )
-    );
-  };
-
-  const handleRelease = (caseId: string) => {
-    setHumanReviewCases(prev => 
-      prev.map(case_ => 
-        case_.id === caseId 
-          ? { ...case_, type: 'released' as const, status: 'RELEASED' as const }
-          : case_
-      )
-    );
-  };
-
-  const getHumanReviewStatusColor = (status: HumanReviewCase['status']) => {
-    switch (status) {
-      case 'PREVENTED': return 'text-green-400 bg-green-900/20';
-      case 'PENDING REVIEW': return 'text-yellow-400 bg-yellow-900/20';
-      case 'RELEASED': return 'text-blue-400 bg-blue-900/20';
-    }
+  const getPhaseIcon = (phase: string) => {
+    if (phase.includes('DETECTION')) return <Zap className="h-4 w-4 text-blue-400" />;
+    if (phase.includes('ANALYSIS')) return <Brain className="h-4 w-4 text-yellow-400" />;
+    if (phase.includes('PREVENTION')) return <Shield className="h-4 w-4 text-red-400" />;
+    if (phase.includes('LEARNING')) return <Activity className="h-4 w-4 text-green-400" />;
+    return <Database className="h-4 w-4 text-gray-400" />;
   };
 
   return (
-    <div className="min-h-screen bg-dark-bg text-white">
+    <div className="min-h-screen bg-gray-900 text-white flex flex-col">
       {/* Header */}
-      <header className="bg-dark-card border-b border-dark-border px-6 py-4">
-        <div className="flex items-center justify-between">
+      <header className="bg-gray-800 border-b border-gray-700 px-4 lg:px-6 py-4 flex-shrink-0">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
           <div className="flex items-center space-x-4">
             <Shield className="h-8 w-8 text-blue-400" />
-            <h1 className="text-2xl font-bold">LAID FIBA Engine</h1>
-          </div>
-          <div className="flex items-center space-x-6">
-            {/* Domain Toggle */}
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-400">Domain:</span>
-              <div className="flex bg-dark-bg rounded-lg border border-dark-border">
-                <button
-                  onClick={() => setCurrentDomain('sassa')}
-                  className={`px-4 py-2 text-sm font-medium rounded-l-lg transition-colors ${
-                    currentDomain === 'sassa'
-                      ? 'bg-blue-600 text-white'
-                      : 'text-gray-400 hover:text-white'
-                  }`}
-                >
-                  SASSA Grant Fraud
-                </button>
-                <button
-                  onClick={() => setCurrentDomain('raf')}
-                  className={`px-4 py-2 text-sm font-medium rounded-r-lg transition-colors ${
-                    currentDomain === 'raf'
-                      ? 'bg-blue-600 text-white'
-                      : 'text-gray-400 hover:text-white'
-                  }`}
-                >
-                  RAF Claims Fraud
-                </button>
-              </div>
+            <div>
+              <h1 className="text-xl lg:text-2xl font-bold">Khusela</h1>
+              <p className="text-xs lg:text-sm text-gray-400">RAF Claims Fraud Prevention System</p>
             </div>
-            
-            {/* System Status */}
-            <div className="flex items-center space-x-2">
-              <div className={`w-3 h-3 rounded-full ${isOnline ? 'bg-green-500' : 'bg-red-500'}`}></div>
-              <span className="text-sm font-medium">
-                {isOnline ? 'System Online' : 'System Offline'}
+          </div>
+          
+          {/* Demo Controls */}
+          <div className="flex items-center gap-2 lg:gap-3 w-full lg:w-auto">
+            <button
+              onClick={runRealisticCollusionDemo}
+              disabled={demoRunning}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed px-4 lg:px-6 py-2 lg:py-3 rounded-lg font-bold transition-all text-sm lg:text-base flex-1 lg:flex-none"
+            >
+              <Play className="h-4 w-4 lg:h-5 lg:w-5" />
+              <span className="hidden sm:inline">{demoRunning ? 'Demo Running...' : 'Run Collusion Demo'}</span>
+              <span className="sm:hidden">{demoRunning ? 'Running...' : 'Run Demo'}</span>
+            </button>
+            <button
+              onClick={resetDemo}
+              className="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 px-3 lg:px-4 py-2 lg:py-3 rounded-lg font-medium transition-all text-sm lg:text-base"
+            >
+              <RotateCcw className="h-4 w-4 lg:h-5 lg:w-5" />
+              <span className="hidden sm:inline">Reset</span>
+            </button>
+          </div>
+        </div>
+        
+        {/* Progress Bar & Phase */}
+        {demoRunning && (
+          <div className="mt-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-gray-400 flex items-center gap-2">
+                <Activity className="h-4 w-4" />
+                {currentPhase}
               </span>
+              <span className="text-sm text-blue-400">{demoProgress}%</span>
             </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Stats Row */}
-      <div className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {currentDomain === 'sassa' ? (
-            <>
-              <div className="bg-dark-card rounded-lg p-6 border border-dark-border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-400">Alerts Today</p>
-                    <p className="text-3xl font-bold text-white">{stats.alertsToday}</p>
-                  </div>
-                  <AlertTriangle className="h-8 w-8 text-orange-400" />
-                </div>
-              </div>
-
-              <div className="bg-dark-card rounded-lg p-6 border border-dark-border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-400">Risk Score</p>
-                    <p className="text-3xl font-bold text-white">{stats.riskScore}/100</p>
-                  </div>
-                  <TrendingUp className="h-8 w-8 text-red-400" />
-                </div>
-              </div>
-
-              <div className="bg-dark-card rounded-lg p-6 border border-dark-border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-400">Fraud Prevented</p>
-                    <p className="text-3xl font-bold text-white">{formatCurrency(stats.fraudPrevented)}</p>
-                  </div>
-                  <Shield className="h-8 w-8 text-green-400" />
-                </div>
-              </div>
-
-              <div className="bg-dark-card rounded-lg p-6 border border-dark-border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-400">Active Cases</p>
-                    <p className="text-3xl font-bold text-white">{stats.activeCases}</p>
-                  </div>
-                  <Users className="h-8 w-8 text-blue-400" />
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="bg-dark-card rounded-lg p-6 border border-dark-border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-400">Claims Processed Today</p>
-                    <p className="text-3xl font-bold text-white">{rafStats.claimsProcessedToday}</p>
-                  </div>
-                  <Activity className="h-8 w-8 text-blue-400" />
-                </div>
-              </div>
-
-              <div className="bg-dark-card rounded-lg p-6 border border-dark-border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-400">System Risk Score</p>
-                    <p className="text-3xl font-bold text-white">{rafStats.systemRiskScore}/100</p>
-                    <div className="w-full bg-gray-700 rounded-full h-2 mt-2">
-                      <div 
-                        className="bg-green-400 h-2 rounded-full" 
-                        style={{ width: `${rafStats.systemRiskScore}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                  <TrendingUp className="h-8 w-8 text-green-400" />
-                </div>
-              </div>
-
-              <div className="bg-dark-card rounded-lg p-6 border border-dark-border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-400">Fraudulent Claims Blocked</p>
-                    <p className="text-3xl font-bold text-white">{formatCurrency(rafStats.fraudulentClaimsBlocked)}</p>
-                  </div>
-                  <Shield className="h-8 w-8 text-red-400" />
-                </div>
-              </div>
-
-              <div className="bg-dark-card rounded-lg p-6 border border-dark-border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-400">Active Investigations</p>
-                    <p className="text-3xl font-bold text-white">{rafStats.activeCases}</p>
-                  </div>
-                  <Users className="h-8 w-8 text-orange-400" />
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* RAF Additional Stats */}
-        {currentDomain === 'raf' && (
-          <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-6 mb-8">
-            <div className="bg-dark-card rounded-lg p-6 border border-dark-border">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-400">Legitimate Victims Protected</p>
-                  <p className="text-3xl font-bold text-white">{rafStats.legitimateVictimsProtected}</p>
-                </div>
-                <CheckCircle className="h-8 w-8 text-green-400" />
-              </div>
+            <div className="w-full bg-gray-700 rounded-full h-2">
+              <div 
+                className="bg-blue-600 h-2 rounded-full transition-all duration-500"
+                style={{ width: `${demoProgress}%` }}
+              ></div>
             </div>
           </div>
         )}
+      </header>
 
-        {/* Automated Actions Panel */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {currentDomain === 'sassa' ? (
-            <>
-              <div className="bg-dark-card rounded-lg p-6 border border-dark-border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-400">Payments Blocked Today</p>
-                    <p className="text-3xl font-bold text-white">{preventionStats.paymentsBlocked}</p>
-                  </div>
-                  <Ban className="h-8 w-8 text-red-400" />
-                </div>
-              </div>
-
-              <div className="bg-dark-card rounded-lg p-6 border border-dark-border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-400">Accounts Locked</p>
-                    <p className="text-3xl font-bold text-white">{preventionStats.accountsLocked}</p>
-                  </div>
-                  <Lock className="h-8 w-8 text-orange-400" />
-                </div>
-              </div>
-
-              <div className="bg-dark-card rounded-lg p-6 border border-dark-border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-400">Applications Rejected</p>
-                    <p className="text-3xl font-bold text-white">{preventionStats.applicationsRejected}</p>
-                  </div>
-                  <XCircle className="h-8 w-8 text-yellow-400" />
-                </div>
-              </div>
-
-              <div className="bg-dark-card rounded-lg p-6 border border-dark-border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-400">Cases Escalated</p>
-                    <p className="text-3xl font-bold text-white">{preventionStats.casesEscalated}</p>
-                  </div>
-                  <AlertCircle className="h-8 w-8 text-purple-400" />
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="bg-dark-card rounded-lg p-6 border border-dark-border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-400">Claims Blocked</p>
-                    <p className="text-3xl font-bold text-white">{rafActions.claimsBlocked}</p>
-                  </div>
-                  <Ban className="h-8 w-8 text-red-400" />
-                </div>
-              </div>
-
-              <div className="bg-dark-card rounded-lg p-6 border border-dark-border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-400">Medical Reports Flagged</p>
-                    <p className="text-3xl font-bold text-white">{rafActions.medicalReportsFlagged}</p>
-                  </div>
-                  <AlertTriangle className="h-8 w-8 text-orange-400" />
-                </div>
-              </div>
-
-              <div className="bg-dark-card rounded-lg p-6 border border-dark-border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-400">Collusion Rings Detected</p>
-                    <p className="text-3xl font-bold text-white">{rafActions.collisionRingDetected}</p>
-                  </div>
-                  <Users className="h-8 w-8 text-yellow-400" />
-                </div>
-              </div>
-
-              <div className="bg-dark-card rounded-lg p-6 border border-dark-border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-400">Cases Escalated</p>
-                    <p className="text-3xl font-bold text-white">{rafActions.casesEscalated}</p>
-                  </div>
-                  <AlertCircle className="h-8 w-8 text-blue-400" />
-                </div>
-              </div>
-            </>
-          )}
+      {/* Navigation Tabs */}
+      <nav className="bg-gray-800 border-b border-gray-700 px-4 lg:px-6 flex-shrink-0">
+        <div className="flex space-x-1 overflow-x-auto">
+          {[
+            { id: 'dashboard', label: 'Dashboard', icon: Activity },
+            { id: 'analytics', label: 'Analytics', icon: TrendingUp },
+            { id: 'cases', label: 'Cases', icon: Users },
+            { id: 'settings', label: 'Settings', icon: Shield }
+          ].map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              onClick={() => setActiveTab(id as any)}
+              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium rounded-t-lg transition-all whitespace-nowrap ${
+                activeTab === id
+                  ? 'bg-gray-900 text-blue-400 border-b-2 border-blue-400'
+                  : 'text-gray-400 hover:text-white hover:bg-gray-700'
+              }`}
+            >
+              <Icon className="h-4 w-4" />
+              <span className="hidden sm:inline">{label}</span>
+            </button>
+          ))}
         </div>
+      </nav>
 
-        {/* Prevention Rules Toggle */}
-        <div className="bg-dark-card rounded-lg p-6 border border-dark-border mb-8">
-          <div className="flex items-center space-x-2 mb-4">
-            <Settings className="h-5 w-5 text-blue-400" />
-            <h2 className="text-xl font-semibold">Prevention Rules</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="flex items-center justify-between p-4 bg-dark-bg rounded-lg border border-dark-border">
-              <div>
-                <p className="font-medium text-white">
-                  {currentDomain === 'sassa' ? 'Auto-block payments' : 'Auto-block claims'}
-                </p>
-                <p className="text-sm text-gray-400">Risk &gt; 80</p>
-              </div>
-              <button
-                onClick={() => togglePreventionRule('autoBlockPayments')}
-                className={`w-12 h-6 rounded-full transition-colors ${
-                  preventionRules.autoBlockPayments ? 'bg-green-500' : 'bg-gray-600'
-                }`}
-              >
-                <div className={`w-5 h-5 bg-white rounded-full transition-transform ${
-                  preventionRules.autoBlockPayments ? 'translate-x-6' : 'translate-x-0.5'
-                }`}></div>
-              </button>
-            </div>
-
-            <div className="flex items-center justify-between p-4 bg-dark-bg rounded-lg border border-dark-border">
-              <div>
-                <p className="font-medium text-white">
-                  {currentDomain === 'sassa' ? 'Auto-lock accounts' : 'Auto-lock claims'}
-                </p>
-                <p className="text-sm text-gray-400">Risk &gt; 90</p>
-              </div>
-              <button
-                onClick={() => togglePreventionRule('autoLockAccounts')}
-                className={`w-12 h-6 rounded-full transition-colors ${
-                  preventionRules.autoLockAccounts ? 'bg-green-500' : 'bg-gray-600'
-                }`}
-              >
-                <div className={`w-5 h-5 bg-white rounded-full transition-transform ${
-                  preventionRules.autoLockAccounts ? 'translate-x-6' : 'translate-x-0.5'
-                }`}></div>
-              </button>
-            </div>
-
-            <div className="flex items-center justify-between p-4 bg-dark-bg rounded-lg border border-dark-border">
-              <div>
-                <p className="font-medium text-white">
-                  {currentDomain === 'sassa' ? 'Auto-reject applications' : 'Auto-reject claims'}
-                </p>
-                <p className="text-sm text-gray-400">Risk &gt; 95</p>
-              </div>
-              <button
-                onClick={() => togglePreventionRule('autoRejectApplications')}
-                className={`w-12 h-6 rounded-full transition-colors ${
-                  preventionRules.autoRejectApplications ? 'bg-green-500' : 'bg-gray-600'
-                }`}
-              >
-                <div className={`w-5 h-5 bg-white rounded-full transition-transform ${
-                  preventionRules.autoRejectApplications ? 'translate-x-6' : 'translate-x-0.5'
-                }`}></div>
-              </button>
-            </div>
-
-            <div className="flex items-center justify-between p-4 bg-dark-bg rounded-lg border border-dark-border">
-              <div>
-                <p className="font-medium text-white">Auto-escalate</p>
-                <p className="text-sm text-gray-400">Complex patterns</p>
-              </div>
-              <button
-                onClick={() => togglePreventionRule('autoEscalate')}
-                className={`w-12 h-6 rounded-full transition-colors ${
-                  preventionRules.autoEscalate ? 'bg-green-500' : 'bg-gray-600'
-                }`}
-              >
-                <div className={`w-5 h-5 bg-white rounded-full transition-transform ${
-                  preventionRules.autoEscalate ? 'translate-x-6' : 'translate-x-0.5'
-                }`}></div>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Live Threat Prevention Visualization */}
-        <div className="bg-dark-card rounded-lg border border-dark-border mb-8">
-          <div className="p-6 border-b border-dark-border">
-            <div className="flex items-center space-x-2 mb-4">
-              <Activity className="h-6 w-6 text-blue-400" />
-              <h2 className="text-xl font-semibold">Live Threat Prevention</h2>
-            </div>
-            
-            {/* IPS Pipeline Visualization */}
-            <div className="relative h-32 bg-dark-bg rounded-lg border border-dark-border mb-4 overflow-hidden">
-              {/* Pipeline Stages */}
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full flex justify-between px-4">
-                  <div className="text-center">
-                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-2">
-                      <Zap className="h-4 w-4 text-white" />
+      {/* Main Content */}
+      <main className="flex-1 overflow-auto">
+        <div className="p-4 lg:p-6">
+          {/* Dashboard Tab Content */}
+          {activeTab === 'dashboard' && (
+            <div>
+              {/* Stats Row */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 lg:gap-6 mb-6 lg:mb-8">
+                <div className="bg-gray-800 rounded-lg p-4 lg:p-6 border border-gray-700">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs lg:text-sm text-gray-400">Claims Processed</p>
+                      <p className="text-2xl lg:text-3xl font-bold text-white">{rafStats.claimsProcessedToday}</p>
                     </div>
-                    <p className="text-xs text-gray-400">Detection</p>
+                    <Activity className="h-6 w-6 lg:h-8 lg:w-8 text-blue-400" />
                   </div>
-                  <div className="text-center">
-                    <div className="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-2">
-                      <Activity className="h-4 w-4 text-white" />
+                </div>
+
+                <div className="bg-gray-800 rounded-lg p-4 lg:p-6 border border-gray-700">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs lg:text-sm text-gray-400">System Risk Score</p>
+                      <p className={`text-2xl lg:text-3xl font-bold ${
+                        rafStats.systemRiskScore > 70 ? 'text-red-400' : 
+                        rafStats.systemRiskScore > 40 ? 'text-yellow-400' : 
+                        'text-green-400'
+                      }`}>
+                        {rafStats.systemRiskScore}/100
+                      </p>
                     </div>
-                    <p className="text-xs text-gray-400">Analysis</p>
+                    <TrendingUp className="h-6 w-6 lg:h-8 lg:w-8 text-red-400" />
                   </div>
-                  <div className="text-center">
-                    <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-2">
-                      <Shield className="h-4 w-4 text-white" />
+                </div>
+
+                <div className="bg-gray-800 rounded-lg p-4 lg:p-6 border border-gray-700">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs lg:text-sm text-gray-400">Fraud Blocked</p>
+                      <p className="text-xl lg:text-2xl font-bold text-green-400">
+                        {formatCurrency(rafStats.fraudulentClaimsBlocked)}
+                      </p>
                     </div>
-                    <p className="text-xs text-gray-400">Prevention</p>
+                    <Shield className="h-6 w-6 lg:h-8 lg:w-8 text-green-400" />
                   </div>
-                  <div className="text-center">
-                    <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-2">
-                      <CheckCircle className="h-4 w-4 text-white" />
+                </div>
+
+                <div className="bg-gray-800 rounded-lg p-4 lg:p-6 border border-gray-700">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs lg:text-sm text-gray-400">Active Cases</p>
+                      <p className="text-2xl lg:text-3xl font-bold text-white">{rafStats.activeCases}</p>
                     </div>
-                    <p className="text-xs text-gray-400">Learning</p>
+                    <Users className="h-6 w-6 lg:h-8 lg:w-8 text-orange-400" />
+                  </div>
+                </div>
+
+                <div className="bg-gray-800 rounded-lg p-4 lg:p-6 border border-gray-700">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs lg:text-sm text-gray-400">Victims Protected</p>
+                      <p className="text-2xl lg:text-3xl font-bold text-blue-400">{rafStats.legitimateVictimsProtected}</p>
+                    </div>
+                    <CheckCircle className="h-6 w-6 lg:h-8 lg:w-8 text-blue-400" />
                   </div>
                 </div>
               </div>
-              
-              {/* Animated Transaction Dots */}
-              {transactionDots.map((dot) => (
-                <div
-                  key={dot.id}
-                  className={`absolute w-3 h-3 rounded-full transition-all duration-100 ${
-                    dot.type === 'normal' 
-                      ? 'bg-blue-400' 
-                      : dot.blocked 
-                        ? 'bg-red-500 animate-pulse' 
-                        : 'bg-red-400'
-                  }`}
-                  style={{
-                    left: `${dot.x}%`,
-                    top: `${dot.y}%`,
-                    transform: dot.blocked ? 'scale(1.5)' : 'scale(1)'
-                  }}
-                >
-                  {dot.blocked && (
-                    <div className="absolute -top-1 -left-1 text-red-500 font-bold text-xs">
-                      ✕
+
+              {/* Actions Row */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8">
+                <div className="bg-gray-800 rounded-lg p-4 lg:p-6 border border-gray-700">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs lg:text-sm text-gray-400">Claims Blocked</p>
+                      <p className="text-2xl lg:text-3xl font-bold text-red-400">{rafActions.claimsBlocked}</p>
+                    </div>
+                    <Ban className="h-6 w-6 lg:h-8 lg:w-8 text-red-400" />
+                  </div>
+                </div>
+
+                <div className="bg-gray-800 rounded-lg p-4 lg:p-6 border border-gray-700">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs lg:text-sm text-gray-400">Medical Reports Flagged</p>
+                      <p className="text-2xl lg:text-3xl font-bold text-orange-400">{rafActions.medicalReportsFlagged}</p>
+                    </div>
+                    <AlertTriangle className="h-6 w-6 lg:h-8 lg:w-8 text-orange-400" />
+                  </div>
+                </div>
+
+                <div className="bg-gray-800 rounded-lg p-4 lg:p-6 border border-gray-700">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs lg:text-sm text-gray-400">Collusion Rings Detected</p>
+                      <p className="text-2xl lg:text-3xl font-bold text-yellow-400">{rafActions.collusionRingsDetected}</p>
+                    </div>
+                    <Users className="h-6 w-6 lg:h-8 lg:w-8 text-yellow-400" />
+                  </div>
+                </div>
+
+                <div className="bg-gray-800 rounded-lg p-4 lg:p-6 border border-gray-700">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs lg:text-sm text-gray-400">Cases Escalated</p>
+                      <p className="text-2xl lg:text-3xl font-bold text-purple-400">{rafActions.casesEscalated}</p>
+                    </div>
+                    <AlertCircle className="h-6 w-6 lg:h-8 lg:w-8 text-purple-400" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Real-Time Detection & Prevention Log */}
+              <div className="bg-gray-800 rounded-lg border border-gray-700">
+                <div className="p-6 border-b border-gray-700">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-xl font-semibold">Real-Time Detection & Prevention Log</h2>
+                      <p className="text-sm text-gray-400 mt-1">
+                        Click any entry to see detailed ML analysis and technical implementation
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-400">
+                      <Eye className="h-4 w-4" />
+                      <span>Full transparency - see how AI makes decisions</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-6">
+                  {preventionLog.length === 0 ? (
+                    <div className="text-center py-12 text-gray-500">
+                      <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p className="mb-2">No prevention actions yet.</p>
+                      <p className="text-sm">Click "Run Collusion Demo" to see Khusela in action.</p>
+                      <p className="text-xs mt-4 text-gray-600">
+                        The demo uses realistic South African RAF data including actual accident locations,
+                        <br />medical terminology, and fraud patterns observed in real cases.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                      {preventionLog.map((action) => (
+                        <div 
+                          key={action.id}
+                          className="bg-gray-900 rounded-lg p-4 border border-gray-700 hover:border-blue-500 transition-colors cursor-pointer"
+                          onClick={() => {
+                            setSelectedAction(action);
+                            setShowDetailsModal(true);
+                          }}
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-2">
+                                {getPhaseIcon(action.phase)}
+                                <span className="font-bold text-white">{action.threatType}</span>
+                                <span className="text-xs text-gray-500">{action.id}</span>
+                                <span className="text-sm text-gray-400">{action.timestamp}</span>
+                              </div>
+                              <p className="text-sm text-blue-400 font-medium mb-2">{action.action}</p>
+                              <p className="text-sm text-gray-300 whitespace-pre-line">{action.details}</p>
+                              {action.claimAmount && (
+                                <p className="text-lg font-bold text-green-400 mt-3">
+                                  Amount: {formatCurrency(action.claimAmount)}
+                                </p>
+                              )}
+                              {action.mlModel && (
+                                <div className="mt-3 flex items-center gap-2 text-xs text-purple-400">
+                                  <Brain className="h-3 w-3" />
+                                  <span>ML Model: {action.mlModel}</span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex flex-col items-end gap-2 ml-4">
+                              <span className={`px-3 py-1 rounded text-xs font-medium whitespace-nowrap ${getStatusColor(action.status)}`}>
+                                {action.status}
+                              </span>
+                              {action.responseTime > 0 && (
+                                <span className="text-xs text-green-400 font-mono">{action.responseTime}ms</span>
+                              )}
+                              <span className="text-xs text-gray-500 flex items-center gap-1">
+                                <Eye className="h-3 w-3" />
+                                View Details
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
-              ))}
-            </div>
-            
-            {/* Prevention Rate Gauge */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-green-400 mb-2">
-                  {preventionMetrics.preventionRate.toFixed(1)}%
-                </div>
-                <p className="text-sm text-gray-400">Threats Stopped</p>
-                <p className="text-xs text-gray-500">&lt; {Math.round(preventionMetrics.avgResponseTime)}ms avg</p>
-              </div>
-              
-              <div className="text-center">
-                <div className="text-3xl font-bold text-blue-400 mb-2">
-                  {preventionMetrics.threatsStopped}
-                </div>
-                <p className="text-sm text-gray-400">Threats Prevented Today</p>
-                <p className="text-xs text-gray-500">{preventionMetrics.totalProcessed} total processed</p>
               </div>
             </div>
-          </div>
-        </div>
+          )}
 
-        {/* Last 5 Prevented Threats Mini-Feed */}
-        <div className="bg-dark-card rounded-lg border border-dark-border mb-8">
-          <div className="p-6 border-b border-dark-border">
-            <h2 className="text-xl font-semibold">Last 5 Prevented Threats</h2>
-            <p className="text-sm text-gray-400 mt-1">Real-time prevention feed</p>
-          </div>
-          <div className="p-6">
-            <div className="space-y-3">
-              {recentPreventions.map((prevention, index) => (
-                <div key={prevention.id} className="flex items-center justify-between p-3 bg-dark-bg rounded-lg border border-dark-border">
-                  <div className="flex items-center space-x-3">
-                    <span className="text-lg">{prevention.icon}</span>
+          {/* Analytics Tab Content */}
+          {activeTab === 'analytics' && (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold text-white mb-6">Analytics Dashboard</h2>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                  <h3 className="text-lg font-semibold mb-4">Fraud Detection Trends</h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">This Week</span>
+                      <span className="text-green-400 font-bold">+12%</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">This Month</span>
+                      <span className="text-red-400 font-bold">-8%</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">This Quarter</span>
+                      <span className="text-blue-400 font-bold">+24%</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                  <h3 className="text-lg font-semibold mb-4">System Performance</h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Uptime</span>
+                      <span className="text-green-400 font-bold">99.9%</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Response Time</span>
+                      <span className="text-blue-400 font-bold">45ms</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Accuracy</span>
+                      <span className="text-green-400 font-bold">98.7%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Cases Tab Content */}
+          {activeTab === 'cases' && (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold text-white mb-6">Active Cases</h2>
+              <div className="bg-gray-800 rounded-lg border border-gray-700">
+                <div className="p-6">
+                  <div className="text-center py-12 text-gray-500">
+                    <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p className="mb-2">No active cases at the moment.</p>
+                    <p className="text-sm">Cases will appear here when fraud is detected.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Settings Tab Content */}
+          {activeTab === 'settings' && (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold text-white mb-6">System Settings</h2>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                  <h3 className="text-lg font-semibold mb-4">Detection Thresholds</h3>
+                  <div className="space-y-4">
                     <div>
-                      <p className="font-medium text-white text-sm">{prevention.threatType}</p>
-                      <p className="text-xs text-gray-400">{prevention.timestamp}</p>
+                      <label className="block text-sm text-gray-400 mb-2">Risk Score Threshold</label>
+                      <input type="range" min="0" max="100" defaultValue="70" className="w-full" />
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-300">→ {prevention.action}</p>
-                    <p className="text-xs text-gray-500">{prevention.responseTime}ms</p>
+                    <div>
+                      <label className="block text-sm text-gray-400 mb-2">Auto-Escalation</label>
+                      <input type="checkbox" defaultChecked className="mr-2" />
+                      <span className="text-sm">Enable automatic case escalation</span>
+                    </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Human Oversight Dashboard */}
-        <div className="bg-dark-card rounded-lg border border-dark-border mb-8">
-          <div className="p-6 border-b border-dark-border">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <User className="h-6 w-6 text-purple-400" />
-                <h2 className="text-xl font-semibold">Human Oversight</h2>
-              </div>
-              <div className="flex items-center space-x-2 text-sm text-gray-400">
-                <Brain className="h-4 w-4" />
-                <span>Model retrained {modelLearning.retrainCount} times today from overrides</span>
-              </div>
-            </div>
-          </div>
-          
-          {/* Tab Navigation */}
-          <div className="flex border-b border-dark-border">
-            {[
-              { id: 'auto-prevented', label: 'Auto-Prevented', count: humanReviewCases.filter(c => c.type === 'auto-prevented').length },
-              { id: 'needs-investigation', label: 'Needs Investigation', count: humanReviewCases.filter(c => c.type === 'needs-investigation').length },
-              { id: 'released', label: 'Released', count: humanReviewCases.filter(c => c.type === 'released').length }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`px-6 py-4 text-sm font-medium transition-colors ${
-                  activeTab === tab.id
-                    ? 'text-purple-400 border-b-2 border-purple-400'
-                    : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                {tab.label} ({tab.count})
-              </button>
-            ))}
-          </div>
-          
-          {/* Tab Content */}
-          <div className="p-6">
-            <div className="space-y-4">
-              {humanReviewCases
-                .filter(case_ => case_.type === activeTab)
-                .map((case_) => (
-                  <div key={case_.id} className="bg-dark-bg rounded-lg p-4 border border-dark-border">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                        <span className="font-medium text-white">{case_.threatType}</span>
-                        <span className="text-sm text-gray-400">{case_.timestamp}</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm font-medium text-white">Risk: {case_.riskScore}%</span>
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${getHumanReviewStatusColor(case_.status)}`}>
-                          {case_.status}
-                        </span>
-                      </div>
+                <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                  <h3 className="text-lg font-semibold mb-4">Notifications</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <input type="checkbox" defaultChecked className="mr-2" />
+                      <span className="text-sm">Email alerts</span>
                     </div>
-                    
-                    <p className="text-sm text-gray-300 mb-3">{case_.details}</p>
-                    <p className="text-sm text-gray-400 mb-4">Action: {case_.action}</p>
-                    
-                    {/* Action Buttons */}
-                    <div className="flex justify-end space-x-3">
-                      {activeTab === 'auto-prevented' && case_.canOverride && (
-                        <button
-                          onClick={() => handleOverride(case_.id)}
-                          className="flex items-center space-x-2 bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                        >
-                          <RotateCcw className="h-4 w-4" />
-                          <span>Override & Release</span>
-                        </button>
-                      )}
-                      
-                      {activeTab === 'needs-investigation' && (
-                        <>
-                          <button
-                            onClick={() => handleApprovePrevention(case_.id)}
-                            className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                          >
-                            <CheckCircle className="h-4 w-4" />
-                            <span>Approve Prevention</span>
-                          </button>
-                          <button
-                            onClick={() => handleRelease(case_.id)}
-                            className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                          >
-                            <RotateCcw className="h-4 w-4" />
-                            <span>Release</span>
-                          </button>
-                        </>
-                      )}
-                      
-                      {activeTab === 'released' && (
-                        <span className="text-sm text-gray-400 italic">
-                          Released after human review - fed back to ML model
-                        </span>
-                      )}
+                    <div>
+                      <input type="checkbox" defaultChecked className="mr-2" />
+                      <span className="text-sm">SMS notifications</span>
+                    </div>
+                    <div>
+                      <input type="checkbox" className="mr-2" />
+                      <span className="text-sm">Push notifications</span>
                     </div>
                   </div>
-                ))}
-              
-              {humanReviewCases.filter(case_ => case_.type === activeTab).length === 0 && (
-                <div className="text-center py-8 text-gray-400">
-                  <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No cases in this category</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* Technical Details Modal */}
+      {showDetailsModal && selectedAction && (
+        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-gray-800 rounded-xl max-w-4xl w-full border-2 border-blue-500 my-8">
+            <div className="p-6 border-b border-gray-700">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-2xl font-bold text-white mb-2">{selectedAction.threatType}</h3>
+                  <p className="text-sm text-gray-400">Technical Analysis & ML Decision Process</p>
+                </div>
+                <button
+                  onClick={() => setShowDetailsModal(false)}
+                  className="text-gray-400 hover:text-white"
+                >
+                  <XCircle className="h-8 w-8" />
+                </button>
+              </div>
+            </div>
+            <div className="p-6 space-y-6">
+              <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
+                <h4 className="font-bold text-white mb-3 flex items-center gap-2">
+                  <Database className="h-5 w-5 text-blue-400" />
+                  Case Information
+                </h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Claim ID:</span>
+                    <span className="text-white ml-2 font-mono">{selectedAction.id}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Timestamp:</span>
+                    <span className="text-white ml-2">{selectedAction.timestamp}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Phase:</span>
+                    <span className="text-white ml-2">{selectedAction.phase}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Status:</span>
+                    <span className={`ml-2 px-2 py-1 rounded text-xs font-medium ${getStatusColor(selectedAction.status)}`}>
+                      {selectedAction.status}
+                    </span>
+                  </div>
+                  {selectedAction.responseTime > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Response Time:</span>
+                      <span className="text-green-400 ml-2 font-mono">{selectedAction.responseTime}ms</span>
+                    </div>
+                  )}
+                  {selectedAction.claimAmount && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Claim Amount:</span>
+                      <span className="text-green-400 ml-2 font-bold">{formatCurrency(selectedAction.claimAmount)}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {selectedAction.technicalDetails && (
+                <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
+                  <h4 className="font-bold text-white mb-3 flex items-center gap-2">
+                    <Brain className="h-5 w-5 text-purple-400" />
+                    Technical Implementation
+                  </h4>
+                  <p className="text-sm text-gray-300">{selectedAction.technicalDetails}</p>
+                </div>
+              )}
+
+              {selectedAction.riskFactors && (
+                <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
+                  <h4 className="font-bold text-white mb-3 flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-yellow-400" />
+                    Risk Factor Analysis
+                  </h4>
+                  <div className="space-y-2">
+                    {selectedAction.riskFactors.map((factor, index) => (
+                      <div key={index} className="flex items-center justify-between text-sm">
+                        <span className="text-gray-300">{factor.factor}</span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-20 bg-gray-700 rounded-full h-2">
+                            <div 
+                              className="bg-blue-500 h-2 rounded-full" 
+                              style={{ width: `${factor.weight * 100}%` }}
+                            ></div>
+                          </div>
+                          <span className="text-blue-400 font-mono text-xs">{factor.weight}</span>
+                          <span className={`text-xs px-2 py-1 rounded ${
+                            factor.value === 'High' ? 'bg-red-900 text-red-400' :
+                            factor.value === 'Medium' ? 'bg-yellow-900 text-yellow-400' :
+                            'bg-green-900 text-green-400'
+                          }`}>
+                            {factor.value}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
           </div>
         </div>
+      )}
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Auto-Response Log */}
-          <div className="bg-dark-card rounded-lg border border-dark-border">
-            <div className="p-6 border-b border-dark-border">
-              <h2 className="text-xl font-semibold">Auto-Response Log</h2>
-              <p className="text-sm text-gray-400 mt-1">Real-time threat prevention actions</p>
-            </div>
-            <div className="p-6 max-h-96 overflow-y-auto">
-              <div className="space-y-3">
-                {preventionActions.map((action, index) => (
-                  <div 
-                    key={action.id} 
-                    className="bg-dark-bg rounded-lg p-4 border border-dark-border hover:border-blue-500 transition-colors cursor-pointer"
-                    onClick={() => handlePreventionActionClick(action)}
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-lg">{action.icon}</span>
-                        <span className="font-medium text-white">{action.threatType}</span>
-                        <span className="text-sm text-gray-400">{action.timestamp}</span>
-                      </div>
-                      <span className="text-sm font-medium text-white">{action.responseTime}ms</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-300">→ {action.action}</span>
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(action.status)}`}>
-                        {action.status}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Risk Visualization */}
-          <div className="bg-dark-card rounded-lg border border-dark-border">
-            <div className="p-6 border-b border-dark-border">
-              <h2 className="text-xl font-semibold">Risk Distribution</h2>
-            </div>
-            <div className="p-6">
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <ScatterChart data={scatterData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                    <XAxis 
-                      type="number" 
-                      dataKey="x" 
-                      name="Transaction Volume"
-                      stroke="#64748b"
-                      tick={{ fill: '#94a3b8' }}
-                    />
-                    <YAxis 
-                      type="number" 
-                      dataKey="y" 
-                      name="Risk Level"
-                      stroke="#64748b"
-                      tick={{ fill: '#94a3b8' }}
-                    />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: '#1e293b', 
-                        border: '1px solid #334155',
-                        borderRadius: '8px',
-                        color: '#ffffff'
-                      }}
-                    />
-                    <Scatter 
-                      dataKey="risk" 
-                      fill="#3b82f6"
-                      r={6}
-                    />
-                  </ScatterChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="mt-4 text-center">
-                <p className="text-sm text-gray-400">
-                  Each point represents a transaction with its risk level and volume
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Prevention Action Details Modal */}
-      {showPreventionModal && selectedAction && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-dark-card rounded-lg border border-dark-border p-6 max-w-md w-full mx-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold">Prevention Action Details</h3>
-              <button
-                onClick={() => setShowPreventionModal(false)}
-                className="text-gray-400 hover:text-white"
-              >
-                <XCircle className="h-6 w-6" />
-              </button>
-            </div>
-            
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <span className="text-2xl">{selectedAction.icon}</span>
+      {/* Results Modal */}
+      {showResultsModal && demoResults && (
+        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-gray-800 rounded-xl max-w-2xl w-full border-2 border-green-500 my-8">
+            <div className="p-6 border-b border-gray-700">
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-white">{selectedAction.threatType}</p>
-                  <p className="text-sm text-gray-400">{selectedAction.timestamp}</p>
+                  <h3 className="text-2xl font-bold text-white mb-2">{demoResults.title}</h3>
+                  <p className="text-sm text-gray-400">Demo Results Summary</p>
                 </div>
-              </div>
-              
-              <div className="bg-dark-bg rounded-lg p-4 border border-dark-border">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-400">Action Taken</p>
-                    <p className="font-medium text-white">{selectedAction.action}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-400">Response Time</p>
-                    <p className="font-medium text-white">{selectedAction.responseTime}ms</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-400">Status</p>
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(selectedAction.status)}`}>
-                      {selectedAction.status}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-400">Threat ID</p>
-                    <p className="font-medium text-white">{selectedAction.id}</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div>
-                <p className="text-sm text-gray-400 mb-2">Details</p>
-                <p className="text-sm text-gray-300">{selectedAction.details}</p>
-              </div>
-              
-              <div className="flex justify-end space-x-3">
                 <button
-                  onClick={() => setShowPreventionModal(false)}
-                  className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+                  onClick={() => setShowResultsModal(false)}
+                  className="text-gray-400 hover:text-white"
+                >
+                  <XCircle className="h-8 w-8" />
+                </button>
+              </div>
+            </div>
+            <div className="p-6 space-y-6">
+              <div className="grid grid-cols-2 gap-6">
+                <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
+                  <h4 className="font-bold text-green-400 mb-2">Fraud Prevented</h4>
+                  <p className="text-2xl font-bold text-white">{formatCurrency(demoResults.fraudPrevented)}</p>
+                </div>
+                <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
+                  <h4 className="font-bold text-blue-400 mb-2">Victims Protected</h4>
+                  <p className="text-2xl font-bold text-white">{demoResults.victimsProtected}</p>
+                </div>
+              </div>
+              
+              <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
+                <h4 className="font-bold text-white mb-3">Technical Summary</h4>
+                <p className="text-sm text-gray-300">{demoResults.technicalSummary}</p>
+              </div>
+              
+              <div className="flex gap-4 justify-center">
+                <button 
+                  onClick={() => setShowResultsModal(false)}
+                  className="bg-blue-600 hover:bg-blue-700 px-8 py-3 rounded-lg font-bold transition-all"
                 >
                   Close
                 </button>
-                <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
-                  <CheckCircle className="h-4 w-4 inline mr-2" />
-                  Mark as Reviewed
+                <button 
+                  onClick={() => {
+                    setShowResultsModal(false);
+                    resetDemo();
+                  }}
+                  className="bg-gray-600 hover:bg-gray-500 px-8 py-3 rounded-lg font-bold transition-all flex items-center gap-2"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  Reset & Run Again
                 </button>
               </div>
             </div>
